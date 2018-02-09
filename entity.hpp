@@ -114,7 +114,16 @@ class Entity
     bool has_next()
     {
       //TODO: what if next element is empty?
-      return Component<Data>::entity_indexes.size()>counter && to>counter;
+      while(Component<Data>::entity_indexes.size()>counter && to>counter)
+      {
+        if(Component<Data>::entity_indexes[counter]==NULL_INDEX)
+        {
+          counter+=1;
+          continue;
+        }
+        return true;
+      }
+      return false;
     }
   };
 
@@ -168,7 +177,6 @@ class Entity
     this->~Entity();
   }
 };
-
 
 std::vector<Entity> Entity::entity_array = std::vector<Entity>();
 std::vector<Index> Entity::entity_gaps = std::vector<Index>();
