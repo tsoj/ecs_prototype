@@ -8,18 +8,29 @@ const Index NULL_INDEX = -1;
 #define COMPONENT(name)\
 public:\
 struct name;\
-Component<name> c ## name = Component<name>();\
+Component<name> c_ ## name = Component<name>();\
 void init_ ## name(name a)\
 {\
-  c ## name.init(entity_index, a);\
+  c_ ## name.init(entity_index, a);\
+  removeables_offset.push_back((char*)(&c_ ## name) - (char*)this);\
 }\
 struct name
 
 class Entity
 {
   private:
+
+  class Removeable
+  {
+    public:
+    virtual void remove()
+    {
+      std::cout << "****" << std::endl;
+    }
+  };
+
   template<typename T>
-  class Component
+  class Component : public Removeable
   {
     friend class Entity;
     private:
@@ -57,6 +68,7 @@ class Entity
     }
     void remove()
     {
+      std::cout << "size: "<<sizeof(T)<<std::endl;
       entity_indexes[component_index] = NULL_INDEX;
       component_gaps.push_back(component_index);
       component_index = NULL_INDEX;
@@ -120,12 +132,13 @@ class Entity
   static std::vector<Entity> entity_array;
   static std::vector<Index> entity_gaps;
   Index entity_index = NULL_INDEX;
+  std::vector<long> removeables_offset = std::vector<long>();
   public:
   Entity(Index entity_index)
   {
     this->entity_index = entity_index;
   }
-  static Entity & create()
+  static Index create()
   {
     Index temp_index;
     if(entity_gaps.empty())
@@ -139,7 +152,7 @@ class Entity
       entity_gaps.pop_back();
       entity_array[temp_index] = Entity(temp_index);
     }
-    return entity_array[temp_index];
+    return temp_index;
   }
   static Entity & get(Index index)
   {
@@ -147,6 +160,10 @@ class Entity
   }
   void remove()
   {
+    for(int i = 0; i < removeables_offset.size(); i++)
+    {
+      ((Removeable*)((long)this + removeables_offset[i]))->remove();
+    }
     entity_gaps.push_back(entity_index);
     this->~Entity();
   }
