@@ -8,7 +8,11 @@ const Index NULL_INDEX = -1;
 #define COMPONENT(name)\
 public:\
 struct name;\
-Component<name> name ## _component = Component<name>(this);\
+Component<name> c ## name = Component<name>();\
+void init_ ## name(name a)\
+{\
+  c ## name.init(entity_index, a);\
+}\
 struct name
 
 class Entity
@@ -17,24 +21,23 @@ class Entity
   template<typename T>
   class Component
   {
+    friend class Entity;
     private:
-    Entity* entity_pointer;
+    Index entity_index = NULL_INDEX;
     Index component_index = NULL_INDEX;
     public:
     static std::vector<T> component_array;
-    static std::vector<Entity*> entity_pointers;
+    static std::vector<Index> entity_indexes;
     static std::vector<Index> component_gaps;
-    Component(Entity* entity_pointer)
+    private:
+    void init(Index entity_index, T a)
     {
-      this->entity_pointer = entity_pointer;
-    }
-    void set(T a)
-    {
+      this->entity_index = entity_index;
       if(component_gaps.empty())
       {
         component_index = component_array.size();
         component_array.push_back(a);
-        entity_pointers.push_back(entity_pointer);
+        entity_indexes.push_back(entity_index);
       }
       else
       {
@@ -42,11 +45,10 @@ class Entity
         component_gaps.pop_back();
         component_array[component_index] = a;
       }
-      std::cout << component_index << " "<<this<<std::endl;
     }
+    public:
     T & get()
     {
-      std::cout << component_index << " "<<this<<std::endl;
       return component_array[component_index];
     }
     bool has()
@@ -55,21 +57,9 @@ class Entity
     }
     void remove()
     {
-      entity_pointers[component_index] = nullptr;
+      entity_indexes[component_index] = NULL_INDEX;
       component_gaps.push_back(component_index);
       component_index = NULL_INDEX;
-    }
-    static void res()
-    {
-      //component_array.reserve(50);
-    }
-    static void print()
-    {
-      std::cout << "Entity Address:\tComponent Address:\tIndex:"<<std::endl;
-      for(int i = 0; i < component_array.size(); i++)
-      {
-        std::cout << entity_pointers[i] << "\t" << std::endl;
-      }
     }
   };
   public:
@@ -83,12 +73,12 @@ class Entity
     Iterator()
     {
       counter = 0;
-      this->to = Component<Data>::entity_pointers.size();
+      this->to = Component<Data>::entity_indexes.size();
     }
     Iterator(Index from)
     {
       counter = from;
-      this->to = Component<Data>::entity_pointers.size();
+      this->to = Component<Data>::entity_indexes.size();
     }
     Iterator(Index from, Index to)
     {
@@ -97,21 +87,22 @@ class Entity
     }
     Entity* next_entity_reference()
     {
-      while(Component<Data>::entity_pointers.size()>counter && to>counter)
+      while(Component<Data>::entity_indexes.size()>counter && to>counter)
       {
-        if(Component<Data>::entity_pointers[counter]==nullptr)
+        if(Component<Data>::entity_indexes[counter]==NULL_INDEX)
         {
           counter+=1;
           continue;
         }
         counter+=1;
-        return Component<Data>::entity_pointers[counter-1];
+        return &Entity::get(Component<Data>::entity_indexes[counter-1]);
       }
       return nullptr;
     }
     bool has_next()
     {
-      return Component<Data>::entity_pointers.size()>counter && to>counter;
+      //TODO: what if next element is empty?
+      return Component<Data>::entity_indexes.size()>counter && to>counter;
     }
   };
 
@@ -127,49 +118,46 @@ class Entity
 
   private:
   static std::vector<Entity> entity_array;
-  static std::vector<Entity*> entity_gaps;
+  static std::vector<Index> entity_gaps;
+  Index entity_index = NULL_INDEX;
   public:
-  Entity()
+  Entity(Index entity_index)
   {
-    k=1;
+    this->entity_index = entity_index;
   }
-  int k=0;
   static Entity & create()
   {
-    Entity* entity_ptr;
+    Index temp_index;
     if(entity_gaps.empty())
     {
-      entity_array.emplace_back();
-      entity_ptr = & entity_array.back();
+      temp_index = entity_array.size();
+      entity_array.emplace_back(temp_index);
     }
     else
     {
-      entity_ptr = entity_gaps.back();
+      temp_index = entity_gaps.back();
       entity_gaps.pop_back();
-      *entity_ptr = Entity();
+      entity_array[temp_index] = Entity(temp_index);
     }
-    return *entity_ptr;
+    return entity_array[temp_index];
   }
-  void print_this()
+  static Entity & get(Index index)
   {
+    return entity_array[index];
   }
   void remove()
   {
-    entity_gaps.push_back(this);
+    entity_gaps.push_back(entity_index);
     this->~Entity();
-  }
-  static void res()
-  {
-    Component<Position>::res();
   }
 };
 
 
 std::vector<Entity> Entity::entity_array = std::vector<Entity>();
-std::vector<Entity*> Entity::entity_gaps = std::vector<Entity*>();
+std::vector<Index> Entity::entity_gaps = std::vector<Index>();
 template<typename T>
 std::vector<T> Entity::Component<T>::component_array = std::vector<T>();
 template<typename T>
-std::vector<Entity*> Entity::Component<T>::entity_pointers = std::vector<Entity*>();
+std::vector<Index> Entity::Component<T>::entity_indexes = std::vector<Index>();
 template<typename T>
 std::vector<Index> Entity::Component<T>::component_gaps = std::vector<Index>();
