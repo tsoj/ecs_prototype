@@ -2,8 +2,8 @@
 #include <iostream>
 #include <vector>
 
-typedef long Index;
-const Index NULL_INDEX = -1;
+typedef long ID;
+const ID NULL_ID = -1;
 
 #define COMPONENT(name)\
 public:\
@@ -11,7 +11,7 @@ struct name;\
 Component<name> c_ ## name = Component<name>();\
 void init_ ## name(name a)\
 {\
-  c_ ## name.init(entity_index, a);\
+  c_ ## name.init(entity_id, a);\
   removeables_offset.push_back((char*)(&c_ ## name) - (char*)this);\
 }\
 struct name
@@ -25,7 +25,7 @@ class Entity
     public:
     virtual void remove()
     {
-      std::cout << "****" << std::endl;
+      std::cout << "f***" << std::endl;
     }
   };
 
@@ -33,45 +33,51 @@ class Entity
   class Component : public Removeable
   {
     friend class Entity;
+    friend class Iterator;
+
     private:
-    Index entity_index = NULL_INDEX;
-    Index component_index = NULL_INDEX;
-    public:
+
+    ID entity_id = NULL_ID;
+    ID component_id = NULL_ID;
     static std::vector<T> component_array;
-    static std::vector<Index> entity_indexes;
-    static std::vector<Index> component_gaps;
-    private:
-    void init(Index entity_index, T a)
+    static std::vector<ID> entity_ids;
+    static std::vector<ID> component_gaps;
+    void init(ID entity_id, T a)
     {
-      this->entity_index = entity_index;
+      this->entity_id = entity_id;
       if(component_gaps.empty())
       {
-        component_index = component_array.size();
+        component_id = component_array.size();
         component_array.push_back(a);
-        entity_indexes.push_back(entity_index);
+        entity_ids.push_back(entity_id);
       }
       else
       {
-        component_index = component_gaps.back();
+        component_id = component_gaps.back();
         component_gaps.pop_back();
-        component_array[component_index] = a;
+        component_array[component_id] = a;
       }
     }
+
     public:
+
     T & get()
     {
-      return component_array[component_index];
+      return component_array[component_id];
+    }
+    ID get_id()
+    {
+      return component_id;
     }
     bool has()
     {
-      return (component_index != NULL_INDEX);
+      return (component_id != NULL_ID);
     }
     void remove()
     {
-      std::cout << "size: "<<sizeof(T)<<std::endl;
-      entity_indexes[component_index] = NULL_INDEX;
-      component_gaps.push_back(component_index);
-      component_index = NULL_INDEX;
+      entity_ids[component_id] = NULL_ID;
+      component_gaps.push_back(component_id);
+      component_id = NULL_ID;
     }
   };
   public:
@@ -79,44 +85,44 @@ class Entity
   class Iterator
   {
     private:
-    Index counter = NULL_INDEX;
-    Index to = NULL_INDEX;
+
+    ID counter = NULL_ID;
+    ID to = NULL_ID;
+
     public:
+
+    const ID END = NULL_ID;
+    const ID BEGIN = 0;
+
     Iterator()
     {
       counter = 0;
-      this->to = Component<Data>::entity_indexes.size();
+      this->to = Component<Data>::entity_ids.size();
     }
-    Iterator(Index from)
+    Iterator(ID from, ID to)
     {
       counter = from;
-      this->to = Component<Data>::entity_indexes.size();
+      this->to = to==END ? Component<Data>::entity_ids.size() : to;
     }
-    Iterator(Index from, Index to)
+    ID next()
     {
-      counter = from;
-      this->to = to;
-    }
-    Entity* next_entity_reference()
-    {
-      while(Component<Data>::entity_indexes.size()>counter && to>counter)
+      while(to>counter)
       {
-        if(Component<Data>::entity_indexes[counter]==NULL_INDEX)
+        if(Component<Data>::entity_ids[counter]==NULL_ID)
         {
           counter+=1;
           continue;
         }
         counter+=1;
-        return &Entity::get(Component<Data>::entity_indexes[counter-1]);
+        return Entity::get(Component<Data>::entity_ids[counter-1]).get_id();
       }
-      return nullptr;
+      return NULL_ID;
     }
     bool has_next()
     {
-      //TODO: what if next element is empty?
-      while(Component<Data>::entity_indexes.size()>counter && to>counter)
+      while(to>counter)
       {
-        if(Component<Data>::entity_indexes[counter]==NULL_INDEX)
+        if(Component<Data>::entity_ids[counter]==NULL_ID)
         {
           counter+=1;
           continue;
@@ -138,34 +144,21 @@ class Entity
   };
 
   private:
+
   static std::vector<Entity> entity_array;
-  static std::vector<Index> entity_gaps;
-  Index entity_index = NULL_INDEX;
+  static std::vector<ID> entity_gaps;
+  ID entity_id = NULL_ID;
   std::vector<long> removeables_offset = std::vector<long>();
+
   public:
-  Entity(Index entity_index)
+
+  Entity(ID entity_id)
   {
-    this->entity_index = entity_index;
+    this->entity_id = entity_id;
   }
-  static Index create()
+  ID get_id()
   {
-    Index temp_index;
-    if(entity_gaps.empty())
-    {
-      temp_index = entity_array.size();
-      entity_array.emplace_back(temp_index);
-    }
-    else
-    {
-      temp_index = entity_gaps.back();
-      entity_gaps.pop_back();
-      entity_array[temp_index] = Entity(temp_index);
-    }
-    return temp_index;
-  }
-  static Entity & get(Index index)
-  {
-    return entity_array[index];
+    return entity_id;
   }
   void remove()
   {
@@ -173,16 +166,36 @@ class Entity
     {
       ((Removeable*)((long)this + removeables_offset[i]))->remove();
     }
-    entity_gaps.push_back(entity_index);
+    entity_gaps.push_back(entity_id);
     this->~Entity();
+  }
+  static ID create()
+  {
+    ID entity_id;
+    if(entity_gaps.empty())
+    {
+      entity_id = entity_array.size();
+      entity_array.emplace_back(entity_id);
+    }
+    else
+    {
+      entity_id = entity_gaps.back();
+      entity_gaps.pop_back();
+      entity_array[entity_id] = Entity(entity_id);
+    }
+    return entity_id;
+  }
+  static Entity & get(ID id)
+  {
+    return entity_array[id];
   }
 };
 
 std::vector<Entity> Entity::entity_array = std::vector<Entity>();
-std::vector<Index> Entity::entity_gaps = std::vector<Index>();
+std::vector<ID> Entity::entity_gaps = std::vector<ID>();
 template<typename T>
 std::vector<T> Entity::Component<T>::component_array = std::vector<T>();
 template<typename T>
-std::vector<Index> Entity::Component<T>::entity_indexes = std::vector<Index>();
+std::vector<ID> Entity::Component<T>::entity_ids = std::vector<ID>();
 template<typename T>
-std::vector<Index> Entity::Component<T>::component_gaps = std::vector<Index>();
+std::vector<ID> Entity::Component<T>::component_gaps = std::vector<ID>();

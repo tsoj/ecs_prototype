@@ -4,7 +4,6 @@ LDFLAGS = -std=c++14 -O3
 NAME = ecs_prototype
 BIN_FILE_PATH = ./bin/
 
-#HPP = bitMasks.hpp
 CPP = main.cpp
 OBJ = $(CPP:%.cpp=%.o)
 OBJ_DEST = $(CPP:%.cpp=$(BIN_FILE_PATH)%.o)
