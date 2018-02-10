@@ -3,7 +3,12 @@
 #include <vector>
 
 typedef long ID;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
 const ID NULL_ID = -1;
+const ID END = NULL_ID;
+const ID BEGIN = 0;
+#pragma GCC diagnostic pop
 
 #define COMPONENT(name)\
 public:\
@@ -16,8 +21,14 @@ void init_ ## name(name a)\
 }\
 struct name
 
+template<typename T>
+class Iterator;
+
 class Entity
 {
+  template<typename T>
+  friend class Iterator;
+
   private:
 
   class Removeable
@@ -33,7 +44,7 @@ class Entity
   class Component : public Removeable
   {
     friend class Entity;
-    friend class Iterator;
+    friend class Iterator<T>;
 
     private:
 
@@ -80,58 +91,8 @@ class Entity
       component_id = NULL_ID;
     }
   };
+
   public:
-  template<typename Data>
-  class Iterator
-  {
-    private:
-
-    ID counter = NULL_ID;
-    ID to = NULL_ID;
-
-    public:
-
-    const ID END = NULL_ID;
-    const ID BEGIN = 0;
-
-    Iterator()
-    {
-      counter = 0;
-      this->to = Component<Data>::entity_ids.size();
-    }
-    Iterator(ID from, ID to)
-    {
-      counter = from;
-      this->to = to==END ? Component<Data>::entity_ids.size() : to;
-    }
-    ID next()
-    {
-      while(to>counter)
-      {
-        if(Component<Data>::entity_ids[counter]==NULL_ID)
-        {
-          counter+=1;
-          continue;
-        }
-        counter+=1;
-        return Entity::get(Component<Data>::entity_ids[counter-1]).get_id();
-      }
-      return NULL_ID;
-    }
-    bool has_next()
-    {
-      while(to>counter)
-      {
-        if(Component<Data>::entity_ids[counter]==NULL_ID)
-        {
-          counter+=1;
-          continue;
-        }
-        return true;
-      }
-      return false;
-    }
-  };
 
   COMPONENT(Position)
   {
@@ -148,7 +109,7 @@ class Entity
   static std::vector<Entity> entity_array;
   static std::vector<ID> entity_gaps;
   ID entity_id = NULL_ID;
-  std::vector<long> removeables_offset = std::vector<long>();
+  std::vector<size_t> removeables_offset = std::vector<size_t>();
 
   public:
 
@@ -162,10 +123,11 @@ class Entity
   }
   void remove()
   {
-    for(int i = 0; i < removeables_offset.size(); i++)
+    for(size_t i = 0; i < removeables_offset.size(); i++)
     {
-      ((Removeable*)((long)this + removeables_offset[i]))->remove();
+      ((Removeable*)((size_t)this + removeables_offset[i]))->remove();
     }
+    entity_id = NULL_ID;
     entity_gaps.push_back(entity_id);
     this->~Entity();
   }
@@ -199,3 +161,104 @@ template<typename T>
 std::vector<ID> Entity::Component<T>::entity_ids = std::vector<ID>();
 template<typename T>
 std::vector<ID> Entity::Component<T>::component_gaps = std::vector<ID>();
+
+template<typename T>
+class Iterator
+{
+  private:
+
+  ID counter = NULL_ID;
+  ID to = NULL_ID;
+
+  public:
+
+  const ID END = NULL_ID;
+  const ID BEGIN = 0;
+
+  Iterator()
+  {
+    counter = 0;
+    this->to = Entity::Component<T>::entity_ids.size();
+  }
+  Iterator(ID from, ID to)
+  {
+    counter = from;
+    this->to = to==END ? Entity::Component<T>::entity_ids.size() : to;
+  }
+  ID next()
+  {
+    while(to>counter)
+    {
+      if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      counter+=1;
+      return Entity::get(Entity::Component<T>::entity_ids[counter-1]).get_id();
+    }
+    return NULL_ID;
+  }
+  bool has_next()
+  {
+    while(to>counter)
+    {
+      if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+};
+
+template<>
+class Iterator<Entity>
+{
+  private:
+
+  ID counter = NULL_ID;
+  ID to = NULL_ID;
+
+  public:
+
+  Iterator()
+  {
+    counter = 0;
+    this->to = Entity::entity_array.size();
+  }
+  Iterator(ID from, ID to)
+  {
+    counter = from;
+    this->to = to==END ? Entity::entity_array.size() : to;
+  }
+  ID next()
+  {
+    while(to>counter)
+    {
+      if(Entity::entity_array[counter].entity_id == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      counter+=1;
+      return Entity::entity_array[counter-1].get_id();
+    }
+    return NULL_ID;
+  }
+  bool has_next()
+  {
+    while(to>counter)
+    {
+      if(Entity::entity_array[counter].entity_id == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+};

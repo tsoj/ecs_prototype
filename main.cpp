@@ -11,7 +11,7 @@ int main()
   Entity::get(p).init_Position(Entity::Position{1.01, 540.045});
   Entity::get(p).init_Mass(Entity::Mass{0.3});
 
-  Entity::Iterator<Entity::Position> iter = Entity::Iterator<Entity::Position>();
+  Iterator<Entity::Position> iter = Iterator<Entity::Position>();
   while(iter.has_next())
   {
     ID id = iter.next();

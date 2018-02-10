@@ -1,6 +1,6 @@
 CC      = clang++
-CFLAGS  = -std=c++14 -O3
-LDFLAGS = -std=c++14 -O3
+CFLAGS  = -std=c++14 -O3 -Wall -Wextra
+LDFLAGS = -std=c++14 -O3 -Wall -Wextra
 NAME = ecs_prototype
 BIN_FILE_PATH = ./bin/
 
