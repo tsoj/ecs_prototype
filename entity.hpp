@@ -21,7 +21,8 @@ void init_ ## name(name a)\
 }\
 struct name
 
-
+template<typename T>
+class Iterator;
 class Entity;
 class EntityPointer
 {
@@ -37,9 +38,6 @@ class EntityPointer
   }
   Entity * operator->() const;
 };
-
-template<typename T>
-class Iterator;
 
 class Entity
 {
@@ -89,9 +87,9 @@ class Entity
 
     public:
 
-    T & get()
+    T * operator->() const
     {
-      return component_array[component_id];
+      return &component_array[component_id];
     }
     ID get_id()
     {
@@ -226,6 +224,57 @@ class Iterator
     while(to>counter)
     {
       if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+};
+template<>
+class Iterator<Entity>
+{
+  private:
+
+  ID counter = NULL_ID;
+  ID to = NULL_ID;
+
+  public:
+
+  const ID END = NULL_ID;
+  const ID BEGIN = 0;
+
+  Iterator()
+  {
+    counter = 0;
+    this->to = Entity::entity_array.size();
+  }
+  Iterator(ID from, ID to)
+  {
+    counter = from;
+    this->to = to==END ? Entity::entity_array.size() : to;
+  }
+  EntityPointer next()
+  {
+    while(to>counter)
+    {
+      if(Entity::entity_array[counter].get_id() == NULL_ID)
+      {
+        counter+=1;
+        continue;
+      }
+      counter+=1;
+      return EntityPointer(Entity::entity_array[counter-1].get_id());
+    }
+    return NULL_ID;
+  }
+  bool has_next()
+  {
+    while(to>counter)
+    {
+      if(Entity::entity_array[counter].get_id() == NULL_ID)
       {
         counter+=1;
         continue;
