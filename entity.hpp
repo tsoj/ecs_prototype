@@ -26,16 +26,20 @@ class Iterator;
 class Entity;
 class EntityPointer
 {
+  friend class Entity;
+  template<typename T>
+  friend class Iterator
+  ;
   private:
 
   ID entity_id = NULL_ID;
-
-  public:
-
   EntityPointer(ID entity_id)
   {
     this->entity_id = entity_id;
   }
+
+  public:
+
   Entity * operator->() const;
 };
 
@@ -43,6 +47,7 @@ class Entity
 {
   template<typename T>
   friend class Iterator;
+  friend class EntityPointer;
 
   private:
 
@@ -125,6 +130,11 @@ class Entity
   static std::vector<ID> entity_gaps;
   ID entity_id = NULL_ID;
   std::vector<size_t> removeables_offset = std::vector<size_t>();
+  static Entity & get(ID id)
+  {
+    return entity_array[id];
+  }
+
 
   public:
 
@@ -132,19 +142,23 @@ class Entity
   {
     this->entity_id = entity_id;
   }
-  ID get_id()
-  {
-    return entity_id;
-  }
   void remove()
   {
     for(size_t i = 0; i < removeables_offset.size(); i++)
     {
       ((Removeable*)((size_t)this + removeables_offset[i]))->remove();
     }
-    entity_id = NULL_ID;
+    removeables_offset = std::vector<size_t>();
     entity_gaps.push_back(entity_id);
-    this->~Entity();
+    entity_id = NULL_ID;
+  }
+  EntityPointer get()
+  {
+    return EntityPointer(entity_id);
+  }
+  ID get_id()
+  {
+    return entity_id;
   }
   static EntityPointer create()
   {
@@ -158,13 +172,9 @@ class Entity
     {
       entity_id = entity_gaps.back();
       entity_gaps.pop_back();
-      entity_array[entity_id] = Entity(entity_id);
+      entity_array[entity_id].entity_id = entity_id;
     }
     return EntityPointer(entity_id);
-  }
-  static Entity & get(ID id)
-  {
-    return entity_array[id];
   }
 };
 

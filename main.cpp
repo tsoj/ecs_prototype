@@ -30,7 +30,7 @@ void gravity_system()
         distance_squared*=-1;
       }
       double F = 6.67259e-11 * ((current_entity_2->c_Mass->m * current_entity->c_Mass->m) / (distance_squared));
-      std::cout<<"Force between " << current_entity->get_id() <<" and "<< current_entity_2->get_id() << ": "<< F<<std::endl;
+      std::cout<<"Force between " << current_entity->get_id() <<" and "<< current_entity_2->get_id() << ": "<< F<<"\n";
     }
   }
 }
@@ -41,25 +41,25 @@ void output_system()
   {
     EntityPointer current_entity = iter.next();
 
-    std::cout << "-------------------"<<std::endl;
-    std::cout << "Entity ID: " << current_entity->get_id() << std::endl;
+    std::cout << "-------------------\n";
+    std::cout << "Entity ID: " << current_entity->get_id() << "\n";
     if(current_entity->c_Position.has())
     {
-      std::cout << "Position:" << std::endl;
-      std::cout << "\tx: " << current_entity->c_Position->x <<std::endl;
-      std::cout << "\ty: " << current_entity->c_Position->y << std::endl;
+      std::cout << "Position:\n";
+      std::cout << "\tx: " << current_entity->c_Position->x << "\n";
+      std::cout << "\ty: " << current_entity->c_Position->y << "\n";
     }
     if(current_entity->c_Mass.has())
     {
-      std::cout << "Mass: " << current_entity->c_Mass->m << std::endl;
+      std::cout << "Mass: " << current_entity->c_Mass->m << "\n";
     }
-    std::cout << "-------------------"<<std::endl;
+    std::cout << "-------------------\n";
   }
 }
 
 int main()
 {
-  std::cout << "Hello" << std::endl;
+  std::cout << "Hello\n" << std::endl;
 
   EntityPointer o = Entity::create();
   o->init_Position(Entity::Position{33.3, 12.03});
@@ -71,19 +71,27 @@ int main()
   q->init_Position(Entity::Position{1.01, 540.045});
   q->init_Mass(Entity::Mass{0.3});
 
-  /*Iterator<Entity::Position> iter = Iterator<Entity::Position>();
-  while(iter.has_next())
-  {
-    EntityPointer current_entity = iter.next();
-    std::cout << current_entity->c_Position->x << std::endl;
-    current_entity->remove();
-  }*/
-  
-  for(;;)
-  {
-    output_system();
-    gravity_system();
-  }
-  std::cout << "Good Bye" << std::endl;
+  output_system();
+  gravity_system();
+  std::cout << std::endl;
+
+  o->remove();
+  EntityPointer h = Entity::create();
+  h->init_Mass(Entity::Mass{4.4});
+  EntityPointer a = Entity::create();
+  a->init_Mass(Entity::Mass{4.5});
+
+  output_system();
+  gravity_system();
+  std::cout << std::endl;
+
+  h->remove();
+  q->remove();
+
+  output_system();
+  gravity_system();
+  std::cout << std::endl;
+
+  std::cout << "\nGood Bye" << std::endl;
   return 0;
 }
