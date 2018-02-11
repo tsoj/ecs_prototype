@@ -2,10 +2,10 @@
 #include <iostream>
 #include <vector>
 
-typedef long ID;
+typedef size_t ID;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-const-variable"
-const ID NULL_ID = -1;
+const ID NULL_ID = SIZE_MAX;
 const ID END = NULL_ID;
 const ID BEGIN = 0;
 #pragma GCC diagnostic pop
@@ -20,6 +20,23 @@ void init_ ## name(name a)\
   removeables_offset.push_back((char*)(&c_ ## name) - (char*)this);\
 }\
 struct name
+
+
+class Entity;
+class EntityPointer
+{
+  private:
+
+  ID entity_id = NULL_ID;
+
+  public:
+
+  EntityPointer(ID entity_id)
+  {
+    this->entity_id = entity_id;
+  }
+  Entity * operator->() const;
+};
 
 template<typename T>
 class Iterator;
@@ -84,7 +101,7 @@ class Entity
     {
       return (component_id != NULL_ID);
     }
-    void remove()
+    void remove() override
     {
       entity_ids[component_id] = NULL_ID;
       component_gaps.push_back(component_id);
@@ -131,7 +148,7 @@ class Entity
     entity_gaps.push_back(entity_id);
     this->~Entity();
   }
-  static ID create()
+  static EntityPointer create()
   {
     ID entity_id;
     if(entity_gaps.empty())
@@ -145,7 +162,7 @@ class Entity
       entity_gaps.pop_back();
       entity_array[entity_id] = Entity(entity_id);
     }
-    return entity_id;
+    return EntityPointer(entity_id);
   }
   static Entity & get(ID id)
   {
@@ -161,6 +178,11 @@ template<typename T>
 std::vector<ID> Entity::Component<T>::entity_ids = std::vector<ID>();
 template<typename T>
 std::vector<ID> Entity::Component<T>::component_gaps = std::vector<ID>();
+
+Entity * EntityPointer::operator->() const
+{
+  return  &Entity::get(entity_id);
+}
 
 template<typename T>
 class Iterator
@@ -185,7 +207,7 @@ class Iterator
     counter = from;
     this->to = to==END ? Entity::Component<T>::entity_ids.size() : to;
   }
-  ID next()
+  EntityPointer next()
   {
     while(to>counter)
     {
@@ -195,7 +217,7 @@ class Iterator
         continue;
       }
       counter+=1;
-      return Entity::get(Entity::Component<T>::entity_ids[counter-1]).get_id();
+      return EntityPointer(Entity::Component<T>::entity_ids[counter-1]);
     }
     return NULL_ID;
   }
@@ -204,55 +226,6 @@ class Iterator
     while(to>counter)
     {
       if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
-      return true;
-    }
-    return false;
-  }
-};
-
-template<>
-class Iterator<Entity>
-{
-  private:
-
-  ID counter = NULL_ID;
-  ID to = NULL_ID;
-
-  public:
-
-  Iterator()
-  {
-    counter = 0;
-    this->to = Entity::entity_array.size();
-  }
-  Iterator(ID from, ID to)
-  {
-    counter = from;
-    this->to = to==END ? Entity::entity_array.size() : to;
-  }
-  ID next()
-  {
-    while(to>counter)
-    {
-      if(Entity::entity_array[counter].entity_id == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
-      counter+=1;
-      return Entity::entity_array[counter-1].get_id();
-    }
-    return NULL_ID;
-  }
-  bool has_next()
-  {
-    while(to>counter)
-    {
-      if(Entity::entity_array[counter].entity_id == NULL_ID)
       {
         counter+=1;
         continue;
