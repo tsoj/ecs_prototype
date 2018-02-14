@@ -5,38 +5,31 @@
 typedef size_t ID;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-const-variable"
-const ID NULL_ID = SIZE_MAX;
+const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
 const ID END = NULL_ID;
 const ID BEGIN = 0;
 #pragma GCC diagnostic pop
 
-#define COMPONENT(name)\
-public:\
-struct name;\
-Component<name> c_ ## name = Component<name>();\
-void init_ ## name(name a)\
-{\
-  c_ ## name.init(entity_id, a);\
-  removeables_offset.push_back((char*)(&c_ ## name) - (char*)this);\
-}\
-struct name
-
+template<typename T>
+class Component;
+class Entity;
+class EntityPtr;
 template<typename T>
 class Iterator;
-class Entity;
-class EntityPointer
+
+class EntityPtr
 {
+  template<typename T>
+  friend class Component;
   friend class Entity;
   template<typename T>
-  friend class Iterator
-  ;
+  friend class Iterator;
+
   private:
 
-  ID entity_id = NULL_ID;
-  EntityPointer(ID entity_id)
-  {
-    this->entity_id = entity_id;
-  }
+  EntityPtr(ID id) : id(id) {}
+  ID id;
+  Entity & getReference();
 
   public:
 
@@ -46,159 +39,145 @@ class EntityPointer
 class Entity
 {
   template<typename T>
-  friend class Iterator;
-  friend class EntityPointer;
+  friend class Component;
+  friend class EntityPtr;
 
   private:
 
-  class Removeable
-  {
-    public:
-    virtual void remove()
-    {
-      std::cout << "f***" << std::endl;
-    }
-  };
+  static std::vector<Entity> entityArray;
+  static std::vector<ID> freeIDs;
 
-  template<typename T>
-  class Component : public Removeable
-  {
-    friend class Entity;
-    friend class Iterator<T>;
-
-    private:
-
-    ID entity_id = NULL_ID;
-    ID component_id = NULL_ID;
-    static std::vector<T> component_array;
-    static std::vector<ID> entity_ids;
-    static std::vector<ID> component_gaps;
-    void init(ID entity_id, T a)
-    {
-      this->entity_id = entity_id;
-      if(component_gaps.empty())
-      {
-        component_id = component_array.size();
-        component_array.push_back(a);
-        entity_ids.push_back(entity_id);
-      }
-      else
-      {
-        component_id = component_gaps.back();
-        component_gaps.pop_back();
-        component_array[component_id] = a;
-      }
-    }
-
-    public:
-
-    T * operator->() const
-    {
-      return &component_array[component_id];
-    }
-    ID get_id()
-    {
-      return component_id;
-    }
-    bool has()
-    {
-      return (component_id != NULL_ID);
-    }
-    void remove() override
-    {
-      entity_ids[component_id] = NULL_ID;
-      component_gaps.push_back(component_id);
-      component_id = NULL_ID;
-    }
-  };
+  std::vector<void (*)(EntityPtr &)> removeFunctions = std::vector<void (*)(EntityPtr &)>();
+  Entity(ID id) : id(id) {}
+  ID id;
 
   public:
 
-  COMPONENT(Position)
+  static EntityPtr create()
   {
-    double x;
-    double y;
-  };
-  COMPONENT(Mass)
-  {
-    double m;
-  };
-
-  private:
-
-  static std::vector<Entity> entity_array;
-  static std::vector<ID> entity_gaps;
-  ID entity_id = NULL_ID;
-  std::vector<size_t> removeables_offset = std::vector<size_t>();
-  static Entity & get(ID id)
-  {
-    return entity_array[id];
-  }
-
-
-  public:
-
-  Entity(ID entity_id)
-  {
-    this->entity_id = entity_id;
-  }
-  void remove()
-  {
-    for(size_t i = 0; i < removeables_offset.size(); i++)
+    ID tempID;
+    if(freeIDs.empty())
     {
-      ((Removeable*)((size_t)this + removeables_offset[i]))->remove();
-    }
-    removeables_offset = std::vector<size_t>();
-    entity_gaps.push_back(entity_id);
-    entity_id = NULL_ID;
-  }
-  EntityPointer get()
-  {
-    return EntityPointer(entity_id);
-  }
-  ID get_id()
-  {
-    return entity_id;
-  }
-  static EntityPointer create()
-  {
-    ID entity_id;
-    if(entity_gaps.empty())
-    {
-      entity_id = entity_array.size();
-      entity_array.emplace_back(entity_id);
+      tempID = entityArray.size();
+      entityArray.push_back(Entity(tempID));
     }
     else
     {
-      entity_id = entity_gaps.back();
-      entity_gaps.pop_back();
-      entity_array[entity_id].entity_id = entity_id;
+      tempID = freeIDs.back();
+      freeIDs.pop_back();
+      entityArray[tempID] = tempID;
     }
-    return EntityPointer(entity_id);
+    return EntityPtr(tempID);
+  }
+  void remove()
+  {
+    freeIDs.push_back(id);
+    id = NULL_ID;
+    EntityPtr tempPtr = EntityPtr(id);
+    for(void (*f)(EntityPtr&) : removeFunctions)
+    {
+      f(tempPtr);
+    }
+    removeFunctions = std::vector<void (*)(EntityPtr &)>();
   }
 };
+std::vector<ID> Entity::freeIDs = std::vector<ID>();
+std::vector<Entity> Entity::entityArray = std::vector<Entity>();
 
-std::vector<Entity> Entity::entity_array = std::vector<Entity>();
-std::vector<ID> Entity::entity_gaps = std::vector<ID>();
-template<typename T>
-std::vector<T> Entity::Component<T>::component_array = std::vector<T>();
-template<typename T>
-std::vector<ID> Entity::Component<T>::entity_ids = std::vector<ID>();
-template<typename T>
-std::vector<ID> Entity::Component<T>::component_gaps = std::vector<ID>();
-
-Entity * EntityPointer::operator->() const
+Entity * EntityPtr::operator->() const
 {
-  return  &Entity::get(entity_id);
+  return  &Entity::entityArray[id];
 }
+Entity & EntityPtr::getReference()
+{
+  return Entity::entityArray[id];
+}
+
+#define COMPONENT(name) struct name : public Component<name>
+
+template<typename T>
+class Component
+{
+  friend class Iterator<T>;
+
+  private:
+
+  static std::vector<T> componentArray;
+  static std::vector<ID> componentToEntityIDs;
+  static std::vector<ID> entityToComponentIDs;
+
+  public:
+
+  static void create(EntityPtr & entityPtr, T t)
+  {
+    Entity & entity = entityPtr.getReference();
+    if(entity.id >= entityToComponentIDs.size())
+    {
+      entityToComponentIDs.resize(entity.id+1, NULL_ID);
+      entityToComponentIDs[entity.id] = componentArray.size();
+      componentToEntityIDs.push_back(entity.id);
+      componentArray.push_back(t);
+    }
+    else if(entity.id < entityToComponentIDs.size())
+    {
+      ID nextEntityID = NULL_ID;
+      for(ID i = entity.id + 1; i<entityToComponentIDs.size(); i++)
+      {
+        if(entityToComponentIDs[i] != NULL_ID)
+        {
+          if(nextEntityID == NULL_ID)
+          {
+            nextEntityID = i;
+          }
+          entityToComponentIDs[i] += 1;
+        }
+      }
+      componentArray.insert(componentArray.begin() + entityToComponentIDs[nextEntityID], t);
+      componentToEntityIDs.insert(componentToEntityIDs.begin() + entityToComponentIDs[nextEntityID], entity.id);
+      entityToComponentIDs[entity.id] = entityToComponentIDs[nextEntityID];
+    }
+    entity.removeFunctions.push_back(&remove);
+  }
+  static void remove(EntityPtr & entityPtr)
+  {
+    Entity & entity = entityPtr.getReference();
+    if(!has(entityPtr))
+    {
+      return;
+    }
+    componentArray.erase(componentArray.begin() + entityToComponentIDs[entity.id]);
+    componentToEntityIDs.erase(componentToEntityIDs.begin() + entityToComponentIDs[entity.id]);
+    for(ID i = entity.id + 1; i<entityToComponentIDs.size(); i++)
+    {
+      if(entityToComponentIDs[i] != NULL_ID)
+      {
+        entityToComponentIDs[i] -= 1;
+      }
+    }
+  }
+  static T & get(EntityPtr & entityPtr)
+  {
+    return componentArray[entityToComponentIDs[entityPtr->id]];
+  }
+  static bool has(EntityPtr & entityPtr)
+  {
+    return entityToComponentIDs[entityPtr->id] != NULL_ID;
+  }
+};
+template<typename T>
+std::vector<T> Component<T>::componentArray = std::vector<T>();
+template<typename T>
+std::vector<ID> Component<T>::componentToEntityIDs = std::vector<ID>();
+template<typename T>
+std::vector<ID> Component<T>::entityToComponentIDs = std::vector<ID>();
 
 template<typename T>
 class Iterator
 {
   private:
 
-  ID counter = NULL_ID;
-  ID to = NULL_ID;
+  ID counter;
+  ID to;
 
   public:
 
@@ -208,89 +187,24 @@ class Iterator
   Iterator()
   {
     counter = 0;
-    this->to = Entity::Component<T>::entity_ids.size();
+    this->to = Component<T>::componentArray.size();
   }
   Iterator(ID from, ID to)
   {
     counter = from;
-    this->to = to==END ? Entity::Component<T>::entity_ids.size() : to;
+    this->to = to == END ? Component<T>::componentArray.size() : to;
   }
-  EntityPointer next()
+  EntityPtr next()
   {
     while(to>counter)
     {
-      if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
       counter+=1;
-      return EntityPointer(Entity::Component<T>::entity_ids[counter-1]);
+      return EntityPtr(Component<T>::componentToEntityIDs[counter-1]);
     }
-    return NULL_ID;
+    return EntityPtr(NULL_ID);
   }
-  bool has_next()
+  bool hasNext()
   {
-    while(to>counter)
-    {
-      if(Entity::Component<T>::entity_ids[counter] == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
-      return true;
-    }
-    return false;
-  }
-};
-template<>
-class Iterator<Entity>
-{
-  private:
-
-  ID counter = NULL_ID;
-  ID to = NULL_ID;
-
-  public:
-
-  const ID END = NULL_ID;
-  const ID BEGIN = 0;
-
-  Iterator()
-  {
-    counter = 0;
-    this->to = Entity::entity_array.size();
-  }
-  Iterator(ID from, ID to)
-  {
-    counter = from;
-    this->to = to==END ? Entity::entity_array.size() : to;
-  }
-  EntityPointer next()
-  {
-    while(to>counter)
-    {
-      if(Entity::entity_array[counter].get_id() == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
-      counter+=1;
-      return EntityPointer(Entity::entity_array[counter-1].get_id());
-    }
-    return NULL_ID;
-  }
-  bool has_next()
-  {
-    while(to>counter)
-    {
-      if(Entity::entity_array[counter].get_id() == NULL_ID)
-      {
-        counter+=1;
-        continue;
-      }
-      return true;
-    }
-    return false;
+    return to>counter;
   }
 };

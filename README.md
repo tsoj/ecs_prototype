@@ -1,1 +1,1 @@
-ecs with customizeable components and systems
+ecs with customizable components and systems
