@@ -3,12 +3,7 @@
 #include <vector>
 
 typedef size_t ID;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-const-variable"
 const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
-const ID END = NULL_ID;
-const ID BEGIN = 0;
-#pragma GCC diagnostic pop
 
 template<typename T>
 class Component;
@@ -72,13 +67,13 @@ class Entity
   void remove()
   {
     freeIDs.push_back(id);
-    id = NULL_ID;
     EntityPtr tempPtr = EntityPtr(id);
     for(void (*f)(EntityPtr&) : removeFunctions)
     {
       f(tempPtr);
     }
     removeFunctions = std::vector<void (*)(EntityPtr &)>();
+    id = NULL_ID;
   }
 };
 std::vector<ID> Entity::freeIDs = std::vector<ID>();
@@ -120,21 +115,23 @@ class Component
     }
     else if(entity.id < entityToComponentIDs.size())
     {
-      ID nextEntityID = NULL_ID;
+
+      bool found = false;
       for(ID i = entity.id + 1; i<entityToComponentIDs.size(); i++)
       {
         if(entityToComponentIDs[i] != NULL_ID)
         {
-          if(nextEntityID == NULL_ID)
+          if(!found)
           {
-            nextEntityID = i;
+            std::cout << entityToComponentIDs[i] << std::endl;
+            componentArray.insert(componentArray.begin() + entityToComponentIDs[i], t);
+            componentToEntityIDs.insert(componentToEntityIDs.begin() + entityToComponentIDs[i], entity.id);
+            entityToComponentIDs[entity.id] = entityToComponentIDs[i];
+            found = true;
           }
           entityToComponentIDs[i] += 1;
         }
       }
-      componentArray.insert(componentArray.begin() + entityToComponentIDs[nextEntityID], t);
-      componentToEntityIDs.insert(componentToEntityIDs.begin() + entityToComponentIDs[nextEntityID], entity.id);
-      entityToComponentIDs[entity.id] = entityToComponentIDs[nextEntityID];
     }
     entity.removeFunctions.push_back(&remove);
   }
@@ -147,7 +144,7 @@ class Component
     }
     componentArray.erase(componentArray.begin() + entityToComponentIDs[entity.id]);
     componentToEntityIDs.erase(componentToEntityIDs.begin() + entityToComponentIDs[entity.id]);
-    for(ID i = entity.id + 1; i<entityToComponentIDs.size(); i++)
+    for(ID i = entity.id; i<entityToComponentIDs.size(); i++)
     {
       if(entityToComponentIDs[i] != NULL_ID)
       {
@@ -181,8 +178,8 @@ class Iterator
 
   public:
 
-  const ID END = NULL_ID;
-  const ID BEGIN = 0;
+  static const ID END = NULL_ID;
+  static const ID BEGIN = 0;
 
   Iterator()
   {
