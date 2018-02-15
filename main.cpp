@@ -16,6 +16,29 @@ COMPONENT(Mass)
   double m;
 };
 
+void outputSystem()
+{
+  Iterator<Entity> iter = Iterator<Entity>();
+  while(iter.hasNext())
+  {
+    EntityPtr current = iter.next();
+    std::cout << "-----------------------" << std::endl;
+    std::cout << "ID: \t" << current.getID() << std::endl;
+    if(Position::has(current))
+    {
+      std::cout << "Position:" << std::endl;
+      std::cout << " x: \t" << Position::get(current).x << std::endl;
+      std::cout << " y: \t" << Position::get(current).y << std::endl;
+    }
+    if(Mass::has(current))
+    {
+      std::cout << "Mass: \t" << Mass::get(current).m << std::endl;
+    }
+    std::cout << "-----------------------" << std::endl;
+  }
+
+}
+
 int main()
 {
   std::cout << "Hello\n" << std::endl;
@@ -28,27 +51,17 @@ int main()
   Position::create(b, Position(500.0, 600.0));
   Position::create(c, Position(42.0, 7890.3));
 
-  Iterator<Position> iter = Iterator<Position>();
-  while(iter.hasNext())
-  {
-    EntityPtr current = iter.next();
-    std::cout << Position::get(current).x << std::endl;
-  }
-
-  a->remove();
-  a = Entity::create();
-  Position::create(z, Position(2000.0, 3000.0));
-  Position::create(a, Position(1000.0, 1000.0));
-  Mass::create(z, Mass(1000.0));
+  outputSystem();
 
   std::cout << std::endl;
+  a->remove();
+  Position::create(z, Position(2000.0, 3000.0));
+  a = Entity::create();
+  Position::create(a, Position(1000.0, 1000.0));
+  Mass::create(z, Mass(1000.0));
+  Position::remove(c);
 
-  Iterator<Mass, Position> iter2 = Iterator<Mass, Position>();
-  while(iter2.hasNext())
-  {
-    EntityPtr current = iter2.next();
-    std::cout << Position::get(current).x << std::endl;
-  }
+  outputSystem();
 
   std::cout << "\nGood Bye" << std::endl;
   return 0;

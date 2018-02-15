@@ -28,6 +28,10 @@ class EntityPtr
 
   public:
 
+  ID getID()
+  {
+    return id;
+  }
   Entity * operator->() const;
 };
 
@@ -36,6 +40,7 @@ class Entity
   template<typename T>
   friend class Component;
   friend class EntityPtr;
+  friend class Iterator<Entity>;
 
   private:
 
@@ -116,7 +121,6 @@ class Component
     }
     else if(entity.id < entityToComponentIDs.size())
     {
-
       bool found = false;
       for(ID i = entity.id + 1; i<entityToComponentIDs.size(); i++)
       {
@@ -151,6 +155,7 @@ class Component
         entityToComponentIDs[i] -= 1;
       }
     }
+    entityToComponentIDs[entity.id] = NULL_ID;
   }
   static T & get(EntityPtr & entityPtr)
   {
@@ -168,8 +173,6 @@ std::vector<ID> Component<T>::componentToEntityIDs = std::vector<ID>();
 template<typename T>
 std::vector<ID> Component<T>::entityToComponentIDs = std::vector<ID>();
 
-
-
 template<typename T, typename... Targs>
 class Iterator
 {
@@ -177,6 +180,7 @@ class Iterator
 
   ID counter;
   ID to;
+  ID increment = 1;
 
   template<typename U>
   bool have(ID id)
@@ -188,14 +192,14 @@ class Iterator
   {
     return have<U1>(id) & have<U2, Uargs...>(id);
   }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-parameter"
   template<typename U>
   bool initialHave(ID id)
   {
     return true;
   }
-#pragma GCC diagnostic pop
+  #pragma GCC diagnostic pop
   template<typename U1, typename U2, typename... Uargs>
   bool initialHave(ID id)
   {
@@ -216,13 +220,17 @@ class Iterator
   {
     counter = from;
     this->to = to == END ? Component<T>::componentArray.size() : to;
+    if(to<from)
+    {
+      increment = -1;
+    }
   }
   EntityPtr next()
   {
-    while(to>counter)
+    while(to!=counter)
     {
       ID currentEntityID = Component<T>::componentToEntityIDs[counter];
-      counter+=1;
+      counter+=increment;
       if(!initialHave<T, Targs...>(currentEntityID))
       {
         continue;
@@ -233,12 +241,69 @@ class Iterator
   }
   bool hasNext()
   {
-    while(to>counter)
+    while(to!=counter)
     {
       ID currentEntityID = Component<T>::componentToEntityIDs[counter];
       if(!initialHave<T, Targs...>(currentEntityID))
       {
-        counter+=1;
+        counter+=increment;
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+};
+template<>
+class Iterator<Entity>
+{
+  private:
+
+  ID counter;
+  ID to;
+  ID increment = 1;
+
+  public:
+
+  static const ID END = NULL_ID;
+  static const ID BEGIN = 0;
+
+  Iterator()
+  {
+    counter = 0;
+    this->to = Entity::entityArray.size();
+  }
+  Iterator(ID from, ID to)
+  {
+    counter = from;
+    this->to = to == END ? Entity::entityArray.size() : to;
+    if(to<from)
+    {
+      increment = -1;
+    }
+  }
+  EntityPtr next()
+  {
+    while(to!=counter)
+    {
+      ID currentEntityID = Entity::entityArray[counter].id;
+      counter+=increment;
+      if(currentEntityID==NULL_ID)
+      {
+        continue;
+      }
+      return EntityPtr(currentEntityID);
+    }
+    return EntityPtr(NULL_ID);
+  }
+  bool hasNext()
+  {
+    while(to!=counter)
+    {
+      ID currentEntityID = Entity::entityArray[counter].id;
+      if(currentEntityID==NULL_ID)
+      {
+        counter+=increment;
         continue;
       }
       return true;
