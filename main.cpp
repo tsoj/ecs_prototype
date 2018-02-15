@@ -39,13 +39,14 @@ int main()
   a = Entity::create();
   Position::create(z, Position(2000.0, 3000.0));
   Position::create(a, Position(1000.0, 1000.0));
+  Mass::create(z, Mass(1000.0));
 
   std::cout << std::endl;
 
-  iter = Iterator<Position>();
-  while(iter.hasNext())
+  Iterator<Mass, Position> iter2 = Iterator<Mass, Position>();
+  while(iter2.hasNext())
   {
-    EntityPtr current = iter.next();
+    EntityPtr current = iter2.next();
     std::cout << Position::get(current).x << std::endl;
   }
 

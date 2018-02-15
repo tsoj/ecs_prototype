@@ -9,7 +9,7 @@ template<typename T>
 class Component;
 class Entity;
 class EntityPtr;
-template<typename T>
+template<typename T, typename... Targs>
 class Iterator;
 
 class EntityPtr
@@ -17,7 +17,7 @@ class EntityPtr
   template<typename T>
   friend class Component;
   friend class Entity;
-  template<typename T>
+  template<typename T, typename... Targs>
   friend class Iterator;
 
   private:
@@ -93,7 +93,8 @@ Entity & EntityPtr::getReference()
 template<typename T>
 class Component
 {
-  friend class Iterator<T>;
+  template<typename T1, typename... Targs>
+  friend class Iterator;
 
   private:
 
@@ -123,7 +124,6 @@ class Component
         {
           if(!found)
           {
-            std::cout << entityToComponentIDs[i] << std::endl;
             componentArray.insert(componentArray.begin() + entityToComponentIDs[i], t);
             componentToEntityIDs.insert(componentToEntityIDs.begin() + entityToComponentIDs[i], entity.id);
             entityToComponentIDs[entity.id] = entityToComponentIDs[i];
@@ -158,7 +158,7 @@ class Component
   }
   static bool has(EntityPtr & entityPtr)
   {
-    return entityToComponentIDs[entityPtr->id] != NULL_ID;
+    return entityToComponentIDs.size() > entityPtr->id && entityToComponentIDs[entityPtr->id] != NULL_ID;
   }
 };
 template<typename T>
@@ -168,13 +168,39 @@ std::vector<ID> Component<T>::componentToEntityIDs = std::vector<ID>();
 template<typename T>
 std::vector<ID> Component<T>::entityToComponentIDs = std::vector<ID>();
 
-template<typename T>
+
+
+template<typename T, typename... Targs>
 class Iterator
 {
   private:
 
   ID counter;
   ID to;
+
+  template<typename U>
+  bool have(ID id)
+  {
+    return Component<U>::entityToComponentIDs.size() > id && Component<U>::entityToComponentIDs[id] != NULL_ID;
+  }
+  template<typename U1, typename U2, typename... Uargs>
+  bool have(ID id)
+  {
+    return have<U1>(id) & have<U2, Uargs...>(id);
+  }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+  template<typename U>
+  bool initialHave(ID id)
+  {
+    return true;
+  }
+#pragma GCC diagnostic pop
+  template<typename U1, typename U2, typename... Uargs>
+  bool initialHave(ID id)
+  {
+    return have<U2, Uargs...>(id);
+  }
 
   public:
 
@@ -195,13 +221,28 @@ class Iterator
   {
     while(to>counter)
     {
+      ID currentEntityID = Component<T>::componentToEntityIDs[counter];
       counter+=1;
-      return EntityPtr(Component<T>::componentToEntityIDs[counter-1]);
+      if(!initialHave<T, Targs...>(currentEntityID))
+      {
+        continue;
+      }
+      return EntityPtr(currentEntityID);
     }
     return EntityPtr(NULL_ID);
   }
   bool hasNext()
   {
-    return to>counter;
+    while(to>counter)
+    {
+      ID currentEntityID = Component<T>::componentToEntityIDs[counter];
+      if(!initialHave<T, Targs...>(currentEntityID))
+      {
+        counter+=1;
+        continue;
+      }
+      return true;
+    }
+    return false;
   }
 };
