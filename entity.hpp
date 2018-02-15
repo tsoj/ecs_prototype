@@ -3,7 +3,12 @@
 #include <vector>
 
 typedef size_t ID;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
 const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
+const ID END = NULL_ID;
+const ID BEGIN = 0;
+#pragma GCC diagnostic pop
 
 template<typename T>
 class Component;
@@ -180,7 +185,6 @@ class Iterator
 
   ID counter;
   ID to;
-  ID increment = 1;
 
   template<typename U>
   bool have(ID id)
@@ -208,9 +212,6 @@ class Iterator
 
   public:
 
-  static const ID END = NULL_ID;
-  static const ID BEGIN = 0;
-
   Iterator()
   {
     counter = 0;
@@ -220,17 +221,13 @@ class Iterator
   {
     counter = from;
     this->to = to == END ? Component<T>::componentArray.size() : to;
-    if(to<from)
-    {
-      increment = -1;
-    }
   }
   EntityPtr next()
   {
-    while(to!=counter)
+    while(to>counter)
     {
       ID currentEntityID = Component<T>::componentToEntityIDs[counter];
-      counter+=increment;
+      counter+=1;
       if(!initialHave<T, Targs...>(currentEntityID))
       {
         continue;
@@ -241,17 +238,21 @@ class Iterator
   }
   bool hasNext()
   {
-    while(to!=counter)
+    while(to>counter)
     {
       ID currentEntityID = Component<T>::componentToEntityIDs[counter];
       if(!initialHave<T, Targs...>(currentEntityID))
       {
-        counter+=increment;
+        counter+=1;
         continue;
       }
       return true;
     }
     return false;
+  }
+  ID getCurrentID()
+  {
+    return counter-1;
   }
 };
 template<>
@@ -261,12 +262,8 @@ class Iterator<Entity>
 
   ID counter;
   ID to;
-  ID increment = 1;
 
   public:
-
-  static const ID END = NULL_ID;
-  static const ID BEGIN = 0;
 
   Iterator()
   {
@@ -277,17 +274,13 @@ class Iterator<Entity>
   {
     counter = from;
     this->to = to == END ? Entity::entityArray.size() : to;
-    if(to<from)
-    {
-      increment = -1;
-    }
   }
   EntityPtr next()
   {
-    while(to!=counter)
+    while(to>counter)
     {
       ID currentEntityID = Entity::entityArray[counter].id;
-      counter+=increment;
+      counter+=1;
       if(currentEntityID==NULL_ID)
       {
         continue;
@@ -298,16 +291,20 @@ class Iterator<Entity>
   }
   bool hasNext()
   {
-    while(to!=counter)
+    while(to>counter)
     {
       ID currentEntityID = Entity::entityArray[counter].id;
       if(currentEntityID==NULL_ID)
       {
-        counter+=increment;
+        counter+=1;
         continue;
       }
       return true;
     }
     return false;
+  }
+  ID getCurrentID()
+  {
+    return counter-1;
   }
 };
