@@ -18,21 +18,21 @@ COMPONENT(Mass)
 
 void outputSystem()
 {
-  Iterator<Entity> iter = Iterator<Entity>();
+  Iterator<void> iter = Iterator<void>();
   while(iter.hasNext())
   {
-    EntityPtr current = iter.next();
+    ID currentEntityID = iter.next();
     std::cout << "-----------------------" << std::endl;
-    std::cout << "ID: \t" << current.getID() << std::endl;
-    if(Position::has(current))
+    std::cout << "ID: \t" << currentEntityID << std::endl;
+    if(hasComponent<Position>(currentEntityID))
     {
       std::cout << "Position:" << std::endl;
-      std::cout << " x: \t" << Position::get(current).x << std::endl;
-      std::cout << " y: \t" << Position::get(current).y << std::endl;
+      std::cout << " x: \t" << getComponent<Position>(currentEntityID).x << std::endl;
+      std::cout << " y: \t" << getComponent<Position>(currentEntityID).y << std::endl;
     }
-    if(Mass::has(current))
+    if(hasComponent<Mass>(currentEntityID))
     {
-      std::cout << "Mass: \t" << Mass::get(current).m << std::endl;
+      std::cout << "Mass: \t" << getComponent<Mass>(currentEntityID).m << std::endl;
     }
     std::cout << "-----------------------" << std::endl;
   }
@@ -43,21 +43,21 @@ void gravitySystem()
   Iterator<Mass, Position> iter = Iterator<Mass, Position>();
   while(iter.hasNext())
   {
-    EntityPtr entity = iter.next();
+    ID currentEntityID = iter.next();
     Iterator<Mass, Position> iter2 = Iterator<Mass, Position>(iter.getCurrentID() + 1, END);
     while(iter2.hasNext())
     {
-      EntityPtr entity2 = iter2.next();
+      ID currentEntityID2 = iter2.next();
 
-      double dx = Position::get(entity2).x - Position::get(entity).x;
-      double dy = Position::get(entity2).y - Position::get(entity).y;
+      double dx = getComponent<Position>(currentEntityID2).x - getComponent<Position>(currentEntityID).x;
+      double dy = getComponent<Position>(currentEntityID2).y - getComponent<Position>(currentEntityID).y;
       double distanceSquared = dx*dx + dy*dy;
       if(distanceSquared<0)
       {
         distanceSquared*=-1;
       }
-      double F = 6.67259e-11 * ((Mass::get(entity2).m * Mass::get(entity).m) / (distanceSquared));
-      std::cout<<"Force between " << entity.getID() <<" and "<< entity2.getID() << ": "<< F<<"\n";
+      double F = 6.67259e-11 * ((getComponent<Mass>(currentEntityID2).m * getComponent<Mass>(currentEntityID).m) / (distanceSquared));
+      std::cout<<"Force between " << currentEntityID <<" and "<< currentEntityID2 << ": "<< F<<"\n";
     }
   }
 }
@@ -65,33 +65,33 @@ void gravitySystem()
 int main()
 {
   std::cout << "Hello\n" << std::endl;
-  EntityPtr a = Entity::create();
-  EntityPtr b = Entity::create();
-  EntityPtr c = Entity::create();
-  EntityPtr d = Entity::create();
-  EntityPtr e = Entity::create();
+  ID a = createEntity();
+  ID b = createEntity();
+  ID c = createEntity();
+  ID d = createEntity();
+  ID e = createEntity();
 
-  Position::create(a, Position(0.2, 0.3));
-  Position::create(b, Position(500.0, 600.0));
-  Position::create(c, Position(42.0, 7890.3));
-  Position::create(d, Position(6.0, 6.3));
-  Mass::create(a, Mass(0.7));
-  Mass::create(b, Mass(7.3));
-  Mass::create(c, Mass(1200000.0));
+  createComponent<Position>(a, Position(0.2, 0.3));
+  createComponent<Position>(b, Position(500.0, 600.0));
+  createComponent<Position>(c, Position(42.0, 7890.3));
+  createComponent<Position>(d, Position(6.0, 6.3));
+  createComponent<Mass>(a, Mass(0.7));
+  createComponent<Mass>(b, Mass(7.3));
+  createComponent<Mass>(c, Mass(1200000.0));
 
   outputSystem();
   gravitySystem();
 
   std::cout << std::endl;
 
-  d->remove();
-  a->remove();
-  Position::remove(c);
+  removeEntity(d);
+  removeEntity(a);
+  removeComponent<Position>(c);
 
-  Position::create(e, Position(2000.0, 3000.0));
-  Mass::create(e, Mass(1000.0));
-  a = Entity::create();
-  Position::create(a, Position(1000.0, 1000.0));
+  createComponent<Position>(e, Position(2000.0, 3000.0));
+  createComponent<Mass>(e, Mass(1000.0));
+  a = createEntity();
+  createComponent<Position>(a, Position(1000.0, 1000.0));
 
   outputSystem();
   gravitySystem();

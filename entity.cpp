@@ -1,64 +1,5 @@
-#pragma once
-#include <iostream>
-#include <vector>
+#include "entity.hpp"
 
-typedef size_t ID;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-const-variable"
-const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
-const ID END = NULL_ID;
-const ID BEGIN = 0;
-#pragma GCC diagnostic pop
-
-ID createEntity();
-void removeEntity(ID entityID);
-
-template<typename T>
-void createComponent(ID entityID, T component);
-template<typename T>
-void removeComponent(ID entityID);
-template<typename T>
-T & getComponent(ID entityID);
-template<typename T>
-bool hasComponent(ID entityID);
-
-template<typename T, typename... Targs>
-class Iterator
-{
-  private:
-
-  ID counter;
-  ID to;
-
-  public:
-
-  Iterator();
-  Iterator(ID from, ID to);
-  ID next();
-  bool hasNext();
-  ID getCurrentID();
-};
-
-template<typename T>
-class Component
-{
-  public:
-
-  static std::vector<T> componentArray;
-  static std::vector<ID> componentToEntityIDs;
-  static std::vector<ID> entityToComponentIDs;
-};
-template<typename T>
-std::vector<T> Component<T>::componentArray = std::vector<T>();
-template<typename T>
-std::vector<ID> Component<T>::componentToEntityIDs = std::vector<ID>();
-template<typename T>
-std::vector<ID> Component<T>::entityToComponentIDs = std::vector<ID>();
-
-#define COMPONENT(name) struct name : public Component<name>
-
-
-/**************************CORE*************************/
 class Entity
 {
   public:
@@ -256,7 +197,7 @@ ID Iterator<void>::next()
   {
     ID currentEntityID = counter;
     counter+=1;
-    if(Entity::entityArray[currentEntityID].exists==false)
+    if(currentEntityID==NULL_ID)
     {
       continue;
     }
@@ -270,7 +211,7 @@ bool Iterator<void>::hasNext()
   while(to>counter)
   {
     ID currentEntityID = counter;
-    if(Entity::entityArray[currentEntityID].exists==false)
+    if(currentEntityID==NULL_ID)
     {
       counter+=1;
       continue;
