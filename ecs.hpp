@@ -10,7 +10,7 @@ const ID END = NULL_ID;
 const ID BEGIN = 0;
 #pragma GCC diagnostic pop
 
-#define COMPONENT(name) struct name : public EC::Component<name>
+/********************ENTITYS, COMPONENTS********************/
 
 class EC
 {
@@ -26,7 +26,9 @@ class EC
   template<typename T>
   static T & getComponent(ID entityID);
   template<typename T>
-  static bool hasComponent(ID entityID);
+  static bool hasComponents(ID entityID);
+  template<typename T1, typename T2, typename... Targs>
+  static bool hasComponents(ID entityID);
 
   template<typename T, typename... Targs>
   class Iterator
@@ -35,13 +37,28 @@ class EC
 
     ID counter;
     ID to;
+    ID current = NULL_ID;
+
+      #pragma GCC diagnostic push
+      #pragma GCC diagnostic ignored "-Wunused-parameter"
+      template<typename U>
+      static bool initialHasComponents(ID entityID)
+      {
+        return true;
+      }
+      #pragma GCC diagnostic pop
+      template<typename U1, typename U2, typename... Uargs>
+      static bool initialHasComponents(ID entityID)
+      {
+        return hasComponents<U2, Uargs...>(entityID);
+      }
 
     public:
 
     Iterator();
     Iterator(ID from, ID to);
-    ID next();
     bool hasNext();
+    ID next();
     ID getCurrentID();
   };
 
@@ -77,29 +94,6 @@ class EC
     bool exists = false;
   };
 
-  template<typename T>
-  static bool has(ID entityID)
-  {
-    return Component<T>::entityToComponentIDs.size() > entityID && Component<T>::entityToComponentIDs[entityID] != NULL_ID;
-  }
-  template<typename T1, typename T2, typename... Targs>
-  static bool has(ID entityID)
-  {
-    return has<T1>(entityID) & has<T2, Targs...>(entityID);
-  }
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-parameter"
-  template<typename T>
-  static bool initialHas(ID entityID)
-  {
-    return true;
-  }
-  #pragma GCC diagnostic pop
-  template<typename T1, typename T2, typename... Targs>
-  static bool initialHas(ID entityID)
-  {
-    return has<T2, Targs...>(entityID);
-  }
 };
 template<typename T>
 std::vector<T> EC::Component<T>::componentArray = std::vector<T>();
@@ -172,7 +166,7 @@ void EC::createComponent(ID entityID, T component)
 template<typename T>
 void EC::removeComponent(ID entityID)
 {
-  if(!hasComponent<T>(entityID))
+  if(!hasComponents<T>(entityID))
   {
     return;
   }
@@ -193,45 +187,39 @@ T & EC::getComponent(ID entityID)
   return Component<T>::componentArray[Component<T>::entityToComponentIDs[entityID]];
 }
 template<typename T>
-bool EC::hasComponent(ID entityID)
+bool EC::hasComponents(ID entityID)
 {
   return Component<T>::entityToComponentIDs.size() > entityID && Component<T>::entityToComponentIDs[entityID] != NULL_ID;
+}
+template<typename T1, typename T2, typename... Targs>
+bool EC::hasComponents(ID entityID)
+{
+  return hasComponents<T1>(entityID) && hasComponents<T2, Targs...>(entityID);
+}
+template<>
+bool EC::hasComponents<void>(ID entityID)
+{
+  return Entity::entityArray.size() > entityID && Entity::entityArray[entityID].exists;
 }
 
 template<typename T, typename... Targs>
 EC::Iterator<T, Targs...>::Iterator()
 {
   counter = 0;
-  this->to = Component<T>::componentArray.size();
+  this->to = Entity::entityArray.size();
 }
 template<typename T, typename... Targs>
 EC::Iterator<T, Targs...>::Iterator(ID from, ID to)
 {
   counter = from;
-  this->to = to == END ? Component<T>::componentArray.size() : to;
-}
-template<typename T, typename... Targs>
-ID EC::Iterator<T, Targs...>::next()
-{
-  while(to>counter)
-  {
-    ID currentEntityID = Component<T>::componentToEntityIDs[counter];
-    counter+=1;
-    if(!initialHas<T, Targs...>(currentEntityID))
-    {
-      continue;
-    }
-    return currentEntityID;
-  }
-  return NULL_ID;
+  this->to = to == END ? Entity::entityArray.size() : to;
 }
 template<typename T, typename... Targs>
 bool EC::Iterator<T, Targs...>::hasNext()
 {
   while(to>counter)
   {
-    ID currentEntityID = Component<T>::componentToEntityIDs[counter];
-    if(!initialHas<T, Targs...>(currentEntityID))
+    if(!hasComponents<T, Targs...>(counter))
     {
       counter+=1;
       continue;
@@ -241,50 +229,34 @@ bool EC::Iterator<T, Targs...>::hasNext()
   return false;
 }
 template<typename T, typename... Targs>
-ID EC::Iterator<T, Targs...>::getCurrentID()
+ID EC::Iterator<T, Targs...>::next()
 {
-  return counter-1;
-}
-
-template<>
-EC::Iterator<void>::Iterator()
-{
-  counter = 0;
-  this->to = Entity::entityArray.size();
-}
-template<>
-EC::Iterator<void>::Iterator(ID from, ID to)
-{
-  counter = from;
-  this->to = to == END ? Entity::entityArray.size() : to;
-}
-template<>
-ID EC::Iterator<void>::next()
-{
-  while(to>counter)
+  if(hasNext())
   {
-    ID currentEntityID = counter;
+    current = counter;
     counter+=1;
-    if(Entity::entityArray[currentEntityID].exists==false)
-    {
-      continue;
-    }
-    return currentEntityID;
+    return current;
   }
   return NULL_ID;
 }
-template<>
-bool EC::Iterator<void>::hasNext()
+template<typename T, typename... Targs>
+ID EC::Iterator<T, Targs...>::getCurrentID()
 {
-  while(to>counter)
-  {
-    ID currentEntityID = counter;
-    if(Entity::entityArray[currentEntityID].exists==false)
-    {
-      counter+=1;
-      continue;
-    }
-    return true;
-  }
-  return false;
+  return current;
 }
+
+#define COMPONENT(name) struct name : public EC::Component<name>
+
+/********************SYSTEMS********************/
+
+class S
+{
+  public:
+
+  static void addSystem();
+  static void removeSystem();
+  static void activateSystem();
+  static void deactivateSystem();
+
+  static void runSystems();
+};

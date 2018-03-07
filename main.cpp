@@ -1,5 +1,5 @@
 #include <iostream>
-#include "entity.hpp"
+#include "ecs.hpp"
 
 COMPONENT(Position)
 {
@@ -24,13 +24,13 @@ void outputSystem()
     ID currentEntityID = iter.next();
     std::cout << "-----------------------" << std::endl;
     std::cout << "ID: \t" << currentEntityID << std::endl;
-    if(EC::hasComponent<Position>(currentEntityID))
+    if(EC::hasComponents<Position>(currentEntityID))
     {
       std::cout << "Position:" << std::endl;
       std::cout << " x: \t" << EC::getComponent<Position>(currentEntityID).x << std::endl;
       std::cout << " y: \t" << EC::getComponent<Position>(currentEntityID).y << std::endl;
     }
-    if(EC::hasComponent<Mass>(currentEntityID))
+    if(EC::hasComponents<Mass>(currentEntityID))
     {
       std::cout << "Mass: \t" << EC::getComponent<Mass>(currentEntityID).m << std::endl;
     }
