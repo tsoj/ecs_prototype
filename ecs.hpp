@@ -263,11 +263,6 @@ class SystemManager
   {
     eventBasedSystem<T>.emplace_back(update);
   }
-  template<typename T>
-  static void registerEvent()
-  {
-    runEventBasedSystemsList.emplace_back(&runEventBasedSystems<T>);
-  }
   static void runSystems()
   {
     for(TimeBasedSystem system : timeBasedSystems)
@@ -282,6 +277,17 @@ class SystemManager
       f();
     }
   }
+  template<typename T>
+  static void throwEvent(T event)
+  {
+    //register event
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-variable"
+    static eventRegisterHelper _(&runEventBasedSystems<T>);
+    #pragma GCC diagnostic pop
+
+    eventQueue<T>.push_back(event);
+  }
 
   private:
 
@@ -292,29 +298,35 @@ class SystemManager
     std::chrono::milliseconds deltaTime;
   };
   template<typename T>
-  struct EventBasedSystem
-  {
-    EventBasedSystem(void (*update)(T)) : update(update){}
-    void (*update)(T);
-  };
-  template<typename T>
   static void runEventBasedSystems()
   {
-    while(eventBasedSystem<T>.size > 0)
+    for(T & event : eventQueue<T>)
     {
-      EventBasedSystem<T> & event = eventBasedSystem<T>.back();
-      for(EventBasedSystem<T> system : eventBasedSystem<T>)
+      for(auto system : eventBasedSystem<T>)
       {
-        system.update(event);
+        system(event);
       }
-      eventBasedSystem<T>.pop_back();
     }
+    eventQueue<T>.clear();
   }
+  struct eventRegisterHelper
+  {
+    explicit eventRegisterHelper(void (*f)())
+    {
+      runEventBasedSystemsList.emplace_back(f);
+    }
+  };
 
   static std::vector<TimeBasedSystem> timeBasedSystems;
   static std::vector<void(*)()> runEventBasedSystemsList;
   template<typename T>
-  static std::vector<EventBasedSystem<T>> eventBasedSystem;
+  static std::vector<void(*)(T)> eventBasedSystem;
   template<typename T>
   static std::vector<T> eventQueue;
 };
+std::vector<SystemManager::TimeBasedSystem> SystemManager::timeBasedSystems = std::vector<SystemManager::TimeBasedSystem>();
+std::vector<void(*)()> SystemManager::runEventBasedSystemsList = std::vector<void(*)()>();
+template<typename T>
+std::vector<void(*)(T)> SystemManager::eventBasedSystem = std::vector<void(*)(T)>();
+template<typename T>
+std::vector<T> SystemManager::eventQueue = std::vector<T>();

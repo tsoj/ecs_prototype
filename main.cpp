@@ -8,13 +8,22 @@ COMPONENT(Position)
   double x;
   double y;
 };
-
 COMPONENT(Mass)
 {
   Mass(double m) : m(m) {}
 
   double m;
 };
+
+struct SomeEvent
+{
+  int value = 0;
+};
+
+void handleSomeEvent(SomeEvent event)
+{
+  std::cout << "HANDLING EVENT !!: " << event.value << std::endl;
+}
 
 void outputSystem()
 {
@@ -37,7 +46,6 @@ void outputSystem()
     std::cout << "-----------------------" << std::endl;
   }
 }
-
 void gravitySystem()
 {
   EC::Iterator<Mass, Position> iter = EC::Iterator<Mass, Position>();
@@ -62,8 +70,13 @@ void gravitySystem()
   }
 }
 
+
 int main()
 {
+  SystemManager::addSystem(&outputSystem, std::chrono::milliseconds(0));
+  SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(0));
+  SystemManager::addSystem(&handleSomeEvent);
+
   std::cout << "Hello\n" << std::endl;
   ID a = EC::createEntity();
   ID b = EC::createEntity();
@@ -79,8 +92,14 @@ int main()
   EC::createComponent<Mass>(b, Mass(7.3));
   EC::createComponent<Mass>(c, Mass(1200000.0));
 
-  outputSystem();
-  gravitySystem();
+  SystemManager::throwEvent(SomeEvent{12504});
+  SystemManager::throwEvent(SomeEvent{12505});
+  SystemManager::throwEvent(SomeEvent{12506});
+  SystemManager::throwEvent(SomeEvent{12507});
+  SystemManager::throwEvent(SomeEvent{12508});
+  SystemManager::throwEvent(SomeEvent{12509});
+
+  SystemManager::runSystems();
 
   std::cout << std::endl;
 
@@ -93,8 +112,7 @@ int main()
   a = EC::createEntity();
   EC::createComponent<Position>(a, Position(1000.0, 1000.0));
 
-  outputSystem();
-  gravitySystem();
+  SystemManager::runSystems();
 
   std::cout << "\nGood Bye" << std::endl;
   return 0;
