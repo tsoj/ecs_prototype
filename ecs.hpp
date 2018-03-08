@@ -11,7 +11,7 @@ const ID END = NULL_ID;
 const ID BEGIN = 0;
 #pragma GCC diagnostic pop
 
-/********************ENTITYS, COMPONENTS********************/
+/********************ENTITIES, COMPONENTS********************/
 
 class EC
 {
@@ -246,48 +246,18 @@ ID EC::Iterator<T, Targs...>::getCurrentID()
   return current;
 }
 
-#define COMPONENT(name) struct name : public EC::Component<name>
-
 /********************SYSTEMS********************/
 
 class SystemManager
 {
   public:
 
-  static void addSystem(void (*update)(), std::chrono::milliseconds deltaTime)
-  {
-    timeBasedSystems.emplace_back(update, deltaTime);
-  }
+  static void addSystem(void (*update)(), std::chrono::milliseconds deltaTime);
   template<typename T>
-  static void addSystem(void (*update)(T))
-  {
-    eventBasedSystem<T>.emplace_back(update);
-  }
-  static void runSystems()
-  {
-    for(TimeBasedSystem system : timeBasedSystems)
-    {
-      if(true/*deltaTime condition*/)
-      {
-        system.update();
-      }
-    }
-    for(auto f : runEventBasedSystemsList)
-    {
-      f();
-    }
-  }
+  static void addSystem(void (*update)(T));
+  static void runSystems();
   template<typename T>
-  static void throwEvent(T event)
-  {
-    //register event
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wunused-variable"
-    static eventRegisterHelper _(&runEventBasedSystems<T>);
-    #pragma GCC diagnostic pop
-
-    eventQueue<T>.push_back(event);
-  }
+  static void throwEvent(T event);
 
   private:
 
@@ -297,18 +267,6 @@ class SystemManager
     void (*update)();
     std::chrono::milliseconds deltaTime;
   };
-  template<typename T>
-  static void runEventBasedSystems()
-  {
-    for(T & event : eventQueue<T>)
-    {
-      for(auto system : eventBasedSystem<T>)
-      {
-        system(event);
-      }
-    }
-    eventQueue<T>.clear();
-  }
   struct eventRegisterHelper
   {
     explicit eventRegisterHelper(void (*f)())
@@ -316,6 +274,8 @@ class SystemManager
       runEventBasedSystemsList.emplace_back(f);
     }
   };
+  template<typename T>
+  static void runEventBasedSystems();
 
   static std::vector<TimeBasedSystem> timeBasedSystems;
   static std::vector<void(*)()> runEventBasedSystemsList;
@@ -330,3 +290,50 @@ template<typename T>
 std::vector<void(*)(T)> SystemManager::eventBasedSystem = std::vector<void(*)(T)>();
 template<typename T>
 std::vector<T> SystemManager::eventQueue = std::vector<T>();
+
+void SystemManager::addSystem(void (*update)(), std::chrono::milliseconds deltaTime)
+{
+  timeBasedSystems.emplace_back(update, deltaTime);
+}
+template<typename T>
+void SystemManager::addSystem(void (*update)(T))
+{
+  eventBasedSystem<T>.emplace_back(update);
+}
+void SystemManager::runSystems()
+{
+  for(TimeBasedSystem system : timeBasedSystems)
+  {
+    if(true/*deltaTime condition*/)
+    {
+      system.update();
+    }
+  }
+  for(auto f : runEventBasedSystemsList)
+  {
+    f();
+  }
+}
+template<typename T>
+void SystemManager::throwEvent(T event)
+{
+  //register event
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  static eventRegisterHelper _(&runEventBasedSystems<T>);
+  #pragma GCC diagnostic pop
+
+  eventQueue<T>.push_back(event);
+}
+template<typename T>
+void SystemManager::runEventBasedSystems()
+{
+  for(T & event : eventQueue<T>)
+  {
+    for(auto system : eventBasedSystem<T>)
+    {
+      system(event);
+    }
+  }
+  eventQueue<T>.clear();
+}

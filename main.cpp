@@ -1,14 +1,14 @@
 #include <iostream>
 #include "ecs.hpp"
 
-COMPONENT(Position)
+struct Position
 {
   Position(double x, double y) : x(x), y(y) {}
 
   double x;
   double y;
 };
-COMPONENT(Mass)
+struct Mass
 {
   Mass(double m) : m(m) {}
 
