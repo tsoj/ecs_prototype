@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 typedef size_t ID;
 #pragma GCC diagnostic push
@@ -249,14 +250,71 @@ ID EC::Iterator<T, Targs...>::getCurrentID()
 
 /********************SYSTEMS********************/
 
-class S
+class SystemManager
 {
   public:
 
-  static void addSystem();
-  static void removeSystem();
-  static void activateSystem();
-  static void deactivateSystem();
+  static void addSystem(void (*update)(), std::chrono::milliseconds deltaTime)
+  {
+    timeBasedSystems.emplace_back(update, deltaTime);
+  }
+  template<typename T>
+  static void addSystem(void (*update)(T))
+  {
+    eventBasedSystem<T>.emplace_back(update);
+  }
+  template<typename T>
+  static void registerEvent()
+  {
+    runEventBasedSystemsList.emplace_back(&runEventBasedSystems<T>);
+  }
+  static void runSystems()
+  {
+    for(TimeBasedSystem system : timeBasedSystems)
+    {
+      if(true/*deltaTime condition*/)
+      {
+        system.update();
+      }
+    }
+    for(auto f : runEventBasedSystemsList)
+    {
+      f();
+    }
+  }
 
-  static void runSystems();
+  private:
+
+  struct TimeBasedSystem
+  {
+    TimeBasedSystem(void (*update)(), std::chrono::milliseconds deltaTime) : update(update), deltaTime(deltaTime){}
+    void (*update)();
+    std::chrono::milliseconds deltaTime;
+  };
+  template<typename T>
+  struct EventBasedSystem
+  {
+    EventBasedSystem(void (*update)(T)) : update(update){}
+    void (*update)(T);
+  };
+  template<typename T>
+  static void runEventBasedSystems()
+  {
+    while(eventBasedSystem<T>.size > 0)
+    {
+      EventBasedSystem<T> & event = eventBasedSystem<T>.back();
+      for(EventBasedSystem<T> system : eventBasedSystem<T>)
+      {
+        system.update(event);
+      }
+      eventBasedSystem<T>.pop_back();
+    }
+  }
+
+  static std::vector<TimeBasedSystem> timeBasedSystems;
+  static std::vector<void(*)()> runEventBasedSystemsList;
+  template<typename T>
+  static std::vector<EventBasedSystem<T>> eventBasedSystem;
+  template<typename T>
+  static std::vector<T> eventQueue;
 };
