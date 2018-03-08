@@ -63,102 +63,89 @@ class EC
     ID getCurrentID();
   };
 
-  template<typename T>
-  class Component
-  {
-    friend class EC;
-
-    private:
-
-    static std::vector<T> componentArray;
-    static std::vector<ID> componentToEntityIDs;
-    static std::vector<ID> entityToComponentIDs;
-  };
-
   private:
 
   EC(){}
 
-  class Entity
+  struct Entity
   {
-    public:
-
-    static std::vector<Entity> entityArray;
-    static std::vector<ID> freeIDs;
-
-    Entity()
-    {
-      exists = true;
-    }
-
     std::vector<void (*)(ID)> removeComponentFunctions = std::vector<void (*)(ID)>();
-    bool exists = false;
+    bool exists = true;
   };
 
+  static std::vector<Entity> entityArray;
+  static std::vector<ID> freeIDs;
+
+  template<typename T>
+  static std::vector<T> componentArray;
+  template<typename T>
+  static std::vector<ID> componentToEntityIDs;
+  template<typename T>
+  static std::vector<ID> entityToComponentIDs;
 };
 template<typename T>
-std::vector<T> EC::Component<T>::componentArray = std::vector<T>();
+std::vector<T> EC::componentArray = std::vector<T>();
 template<typename T>
-std::vector<ID> EC::Component<T>::componentToEntityIDs = std::vector<ID>();
+std::vector<ID> EC::componentToEntityIDs = std::vector<ID>();
 template<typename T>
-std::vector<ID> EC::Component<T>::entityToComponentIDs = std::vector<ID>();
+std::vector<ID> EC::entityToComponentIDs = std::vector<ID>();
 
-std::vector<ID> EC::Entity::freeIDs = std::vector<ID>();
-std::vector<EC::Entity> EC::Entity::entityArray = std::vector<Entity>();
+std::vector<ID> EC::freeIDs = std::vector<ID>();
+std::vector<EC::Entity> EC::entityArray = std::vector<Entity>();
 
 ID EC::createEntity()
 {
   ID tempID;
-  if(Entity::freeIDs.empty())
+  if(freeIDs.empty())
   {
-    tempID = Entity::entityArray.size();
-    Entity::entityArray.emplace_back();
+    tempID = entityArray.size();
+    entityArray.emplace_back();
   }
   else
   {
-    tempID = Entity::freeIDs.back();
-    Entity::freeIDs.pop_back();
-    Entity::entityArray[tempID].exists = true;
+    tempID = freeIDs.back();
+    freeIDs.pop_back();
+    entityArray[tempID].exists = true;
   }
   return tempID;
 }
 void EC::removeEntity(ID entityID)
 {
-  Entity::freeIDs.push_back(entityID);
-  for(void (*f)(ID) : Entity::entityArray[entityID].removeComponentFunctions)
+  freeIDs.push_back(entityID);
+  for(void (*f)(ID) : entityArray[entityID].removeComponentFunctions)
   {
     f(entityID);
   }
-  Entity::entityArray[entityID].removeComponentFunctions = std::vector<void (*)(ID)>();
-  Entity::entityArray[entityID].exists = false;
+  entityArray[entityID].removeComponentFunctions = std::vector<void (*)(ID)>();
+  entityArray[entityID].exists = false;
 }
 
 template<typename T>
 void EC::createComponent(ID entityID, T component)
 {
-  Entity & entity = Entity::entityArray[entityID];
-  if(entityID >= Component<T>::entityToComponentIDs.size())
+  Entity & entity = entityArray[entityID];
+  if(entityID >= entityToComponentIDs<T>.size())
   {
-    Component<T>::entityToComponentIDs.resize(entityID+1, NULL_ID);
-    Component<T>::entityToComponentIDs[entityID] = Component<T>::componentArray.size();
-    Component<T>::componentToEntityIDs.push_back(entityID);
-    Component<T>::componentArray.push_back(component);
+    entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
+    entityToComponentIDs<T>[entityID] = componentArray<T>.size();
+    componentToEntityIDs<T>.push_back(entityID);
+    componentArray<T>.push_back(component);
   }
-  else if(entityID < Component<T>::entityToComponentIDs.size())
+  else if(entityID < entityToComponentIDs<T>.size())
   {
     bool foundBiggerID = false;
-    for(ID i = entityID + 1; i < Component<T>::entityToComponentIDs.size(); i++)
+    for(ID i = entityID + 1; i < entityToComponentIDs<T>.size(); i++)
     {
-      if(Component<T>::entityToComponentIDs[i] != NULL_ID)
+      if(entityToComponentIDs<T>[i] != NULL_ID)
       {
         if(foundBiggerID == false)
         {
-          Component<T>::componentArray.insert(Component<T>::componentArray.begin() + Component<T>::entityToComponentIDs[i], component);
-          Component<T>::componentToEntityIDs.insert(Component<T>::componentToEntityIDs.begin() + Component<T>::entityToComponentIDs[i], entityID);
-          Component<T>::entityToComponentIDs[entityID] = Component<T>::entityToComponentIDs[i];
+          componentArray<T>.insert(componentArray<T>.begin() + entityToComponentIDs<T>[i], component);
+          componentToEntityIDs<T>.insert(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[i], entityID);
+          entityToComponentIDs<T>[entityID] = entityToComponentIDs<T>[i];
           foundBiggerID = true;
         }
-        Component<T>::entityToComponentIDs[i] += 1;
+        entityToComponentIDs<T>[i] += 1;
       }
     }
   }
@@ -171,26 +158,26 @@ void EC::removeComponent(ID entityID)
   {
     return;
   }
-  Component<T>::componentArray.erase(Component<T>::componentArray.begin() + Component<T>::entityToComponentIDs[entityID]);
-  Component<T>::componentToEntityIDs.erase(Component<T>::componentToEntityIDs.begin() + Component<T>::entityToComponentIDs[entityID]);
-  for(ID i = entityID; i<Component<T>::entityToComponentIDs.size(); i++)
+  componentArray<T>.erase(componentArray<T>.begin() + entityToComponentIDs<T>[entityID]);
+  componentToEntityIDs<T>.erase(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[entityID]);
+  for(ID i = entityID; i<entityToComponentIDs<T>.size(); i++)
   {
-    if(Component<T>::entityToComponentIDs[i] != NULL_ID)
+    if(entityToComponentIDs<T>[i] != NULL_ID)
     {
-      Component<T>::entityToComponentIDs[i] -= 1;
+      entityToComponentIDs<T>[i] -= 1;
     }
   }
-  Component<T>::entityToComponentIDs[entityID] = NULL_ID;
+  entityToComponentIDs<T>[entityID] = NULL_ID;
 }
 template<typename T>
 T & EC::getComponent(ID entityID)
 {
-  return Component<T>::componentArray[Component<T>::entityToComponentIDs[entityID]];
+  return componentArray<T>[entityToComponentIDs<T>[entityID]];
 }
 template<typename T>
 bool EC::hasComponents(ID entityID)
 {
-  return Component<T>::entityToComponentIDs.size() > entityID && Component<T>::entityToComponentIDs[entityID] != NULL_ID;
+  return entityToComponentIDs<T>.size() > entityID && entityToComponentIDs<T>[entityID] != NULL_ID;
 }
 template<typename T1, typename T2, typename... Targs>
 bool EC::hasComponents(ID entityID)
@@ -200,20 +187,20 @@ bool EC::hasComponents(ID entityID)
 template<>
 bool EC::hasComponents<void>(ID entityID)
 {
-  return Entity::entityArray.size() > entityID && Entity::entityArray[entityID].exists;
+  return entityArray.size() > entityID && entityArray[entityID].exists;
 }
 
 template<typename T, typename... Targs>
 EC::Iterator<T, Targs...>::Iterator()
 {
   counter = 0;
-  this->to = Entity::entityArray.size();
+  this->to = entityArray.size();
 }
 template<typename T, typename... Targs>
 EC::Iterator<T, Targs...>::Iterator(ID from, ID to)
 {
   counter = from;
-  this->to = to == END ? Entity::entityArray.size() : to;
+  this->to = to == END ? entityArray.size() : to;
 }
 template<typename T, typename... Targs>
 bool EC::Iterator<T, Targs...>::hasNext()

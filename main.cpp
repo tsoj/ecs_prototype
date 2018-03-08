@@ -3,15 +3,11 @@
 
 struct Position
 {
-  Position(double x, double y) : x(x), y(y) {}
-
   double x;
   double y;
 };
 struct Mass
 {
-  Mass(double m) : m(m) {}
-
   double m;
 };
 
@@ -19,7 +15,6 @@ struct SomeEvent
 {
   int value = 0;
 };
-
 void handleSomeEvent(SomeEvent event)
 {
   std::cout << "HANDLING EVENT !!: " << event.value << std::endl;
@@ -84,13 +79,13 @@ int main()
   ID d = EC::createEntity();
   ID e = EC::createEntity();
 
-  EC::createComponent<Position>(a, Position(0.2, 0.3));
-  EC::createComponent<Position>(b, Position(500.0, 600.0));
-  EC::createComponent<Position>(c, Position(42.0, 7890.3));
-  EC::createComponent<Position>(d, Position(6.0, 6.3));
-  EC::createComponent<Mass>(a, Mass(0.7));
-  EC::createComponent<Mass>(b, Mass(7.3));
-  EC::createComponent<Mass>(c, Mass(1200000.0));
+  EC::createComponent<Position>(a, Position{0.2, 0.3});
+  EC::createComponent<Position>(b, Position{500.0, 600.0});
+  EC::createComponent<Position>(c, Position{42.0, 7890.3});
+  EC::createComponent<Position>(d, Position{6.0, 6.3});
+  EC::createComponent<Mass>(a, Mass{0.7});
+  EC::createComponent<Mass>(b, Mass{7.3});
+  EC::createComponent<Mass>(c, Mass{1200000.0});
 
   SystemManager::throwEvent(SomeEvent{12504});
   SystemManager::throwEvent(SomeEvent{12505});
@@ -107,10 +102,10 @@ int main()
   EC::removeEntity(a);
   EC::removeComponent<Position>(c);
 
-  EC::createComponent<Position>(e, Position(2000.0, 3000.0));
-  EC::createComponent<Mass>(e, Mass(1000.0));
+  EC::createComponent<Position>(e, Position{2000.0, 3000.0});
+  EC::createComponent<Mass>(e, Mass{1000.0});
   a = EC::createEntity();
-  EC::createComponent<Position>(a, Position(1000.0, 1000.0));
+  EC::createComponent<Position>(a, Position{1000.0, 1000.0});
 
   SystemManager::runSystems();
 
