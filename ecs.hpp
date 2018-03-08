@@ -39,21 +39,7 @@ class EC
     ID counter;
     ID to;
     ID current = NULL_ID;
-
-      #pragma GCC diagnostic push
-      #pragma GCC diagnostic ignored "-Wunused-parameter"
-      template<typename U>
-      static bool initialHasComponents(ID entityID)
-      {
-        return true;
-      }
-      #pragma GCC diagnostic pop
-      template<typename U1, typename U2, typename... Uargs>
-      static bool initialHasComponents(ID entityID)
-      {
-        return hasComponents<U2, Uargs...>(entityID);
-      }
-
+    
     public:
 
     Iterator();
