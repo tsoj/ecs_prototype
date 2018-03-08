@@ -39,7 +39,7 @@ class EC
     ID counter;
     ID to;
     ID current = NULL_ID;
-    
+
     public:
 
     Iterator();
