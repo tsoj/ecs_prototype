@@ -1,5 +1,6 @@
 #include <iostream>
 #include "ecs.hpp"
+using namespace ecs;
 
 struct Position
 {
@@ -68,11 +69,12 @@ void gravitySystem()
 
 int main()
 {
+  std::cout << "Hello\n" << std::endl;
+
   SystemManager::addSystem(&outputSystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&handleSomeEvent);
 
-  std::cout << "Hello\n" << std::endl;
   ID a = EC::createEntity();
   ID b = EC::createEntity();
   ID c = EC::createEntity();
