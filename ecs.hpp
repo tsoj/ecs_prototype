@@ -317,9 +317,9 @@ namespace ecs
   {
     for(T & event : eventQueue<T>)
     {
-      for(auto system : eventBasedSystem<T>)
+      for(auto f : eventBasedSystem<T>)
       {
-        system(event);
+        f(event);
       }
     }
     eventQueue<T>.clear();
