@@ -18,23 +18,24 @@ namespace ecs
 
   /********************ENTITIES and COMPONENTS********************/
 
-  class EC
+  class Entity
   {
+    template<typename T, typename... Targs>
+    friend class RealIterator;
     public:
 
-    static ID createEntity();
-    static void removeEntity(ID entityID);
-
+    static Entity createEntity();
+    void removeEntity();
     template<typename T, typename... Args>
-    static void createComponent(ID entityID, const Args&... args);
+    void createComponent(const Args&... args);
     template<typename T>
-    static void removeComponent(ID entityID);
+    void removeComponent();
     template<typename T>
-    static T & getComponent(ID entityID);
+    T & getComponent();
     template<typename T>
-    static bool hasComponents(ID entityID);
+    bool hasComponents();
     template<typename T1, typename T2, typename... Targs>
-    static bool hasComponents(ID entityID);
+    bool hasComponents();
 
     template<typename T, typename... Targs>
     class Iterator
@@ -50,22 +51,28 @@ namespace ecs
       Iterator();
       Iterator(ID from, ID to);
       bool hasNext();
-      ID next();
-      ID getCurrentID();
+      Entity next();
+      ID getID();
     };
+
+    ID getID()
+    {
+      return entityID;
+    }
 
     private:
 
-    EC(){}
+    Entity(ID entityID) : entityID(entityID) {}
+    ID entityID;
 
-    struct Entity
+    struct EntityEntry
     {
       std::vector<void (*)(ID)> removeComponentFunctions = std::vector<void (*)(ID)>();
       bool exists = true;
     };
 
-    static std::vector<Entity> entityArray;
-    static std::vector<ID> freeIDs;
+    static std::vector<EntityEntry> entityEntryArray;
+    static std::vector<ID> freeEntityIDs;
 
     template<typename T>
     static std::vector<T> componentArray;
@@ -73,48 +80,171 @@ namespace ecs
     static std::vector<ID> componentToEntityIDs;
     template<typename T>
     static std::vector<ID> entityToComponentIDs;
+
+    static void removeEntity(ID entityID);
+    template<typename T, typename... Args>
+    static void createComponent(ID entityID, const Args&... args);
+    template<typename T>
+    static void removeComponent(ID entityID);
+    template<typename T>
+    static T & getComponent(ID entityID);
+    template<typename T>
+    static bool hasComponents(ID entityID);
+    template<typename T1, typename T2, typename... Targs>
+    static bool hasComponents(ID entityID);
   };
   template<typename T>
-  std::vector<T> EC::componentArray = std::vector<T>();
+  std::vector<T> Entity::componentArray = std::vector<T>();
   template<typename T>
-  std::vector<ID> EC::componentToEntityIDs = std::vector<ID>();
+  std::vector<ID> Entity::componentToEntityIDs = std::vector<ID>();
   template<typename T>
-  std::vector<ID> EC::entityToComponentIDs = std::vector<ID>();
+  std::vector<ID> Entity::entityToComponentIDs = std::vector<ID>();
 
-  std::vector<ID> EC::freeIDs = std::vector<ID>();
-  std::vector<EC::Entity> EC::entityArray = std::vector<Entity>();
+  std::vector<ID> Entity::freeEntityIDs = std::vector<ID>();
+  std::vector<Entity::EntityEntry> Entity::entityEntryArray = std::vector<EntityEntry>();
 
-  ID EC::createEntity()
+  template<typename T, typename... Targs>
+  class RealIterator
+  {
+
+    public:
+    ID entityID;
+
+    RealIterator() : entityID(NULL_ID) {}
+    explicit RealIterator(ID entityID) : entityID(entityID) {}
+    explicit RealIterator(Entity entity) : entityID(entity.entityID) {}
+
+    RealIterator<T, Targs...> begin()
+    {
+      ID i = 0;
+      while(end().entityID > i)
+      {
+        if(!Entity::hasComponents<T, Targs...>(i))
+        {
+          i+=1;
+          continue;
+        }
+        return RealIterator<T, Targs...>(i);
+      }
+      return end();
+    }
+    RealIterator<T, Targs...> end()
+    {
+      return RealIterator<T, Targs...>(Entity::entityEntryArray.size());
+    }
+
+    void operator= (const RealIterator<T, Targs...>& a)
+    {
+      entityID = a.entityID;
+    }
+    bool operator== (const RealIterator<T, Targs...>& a)
+    {
+      return entityID == a.entityID;
+    }
+    bool operator!= (const RealIterator<T, Targs...>& a)
+    {
+      return entityID != a.entityID;
+    }
+    Entity operator*()
+    {
+      return Entity(entityID);
+    }
+    Entity operator->()
+    {
+      return Entity(entityID);
+    }
+    RealIterator<T, Targs...> operator++()         //=> Prefix Increment
+    {
+      entityID+=1;
+      while(end().entityID > entityID)
+      {
+        if(!Entity::hasComponents<T, Targs...>(entityID))
+        {
+          entityID+=1;
+          continue;
+        }
+        return RealIterator<T, Targs...>(entityID);
+      }
+      entityID = end().entityID;
+      return end();
+    }
+    RealIterator<T, Targs...> operator++(int)      //=> Postfix Increment
+    {
+      RealIterator<T, Targs...> ret = RealIterator<T, Targs...>(entityID);
+      entityID+=1;
+      while(end().entityID > entityID)
+      {
+        if(!Entity::hasComponents<T, Targs...>(entityID))
+        {
+          entityID+=1;
+          continue;
+        }
+        return ret;
+      }
+      entityID = end().entityID;
+      return end();
+    }
+  };
+
+  Entity Entity::createEntity()
   {
     ID tempID;
-    if(freeIDs.empty())
+    if(freeEntityIDs.empty())
     {
-      tempID = entityArray.size();
-      entityArray.emplace_back();
+      tempID = entityEntryArray.size();
+      entityEntryArray.emplace_back();
     }
     else
     {
-      tempID = freeIDs.back();
-      freeIDs.pop_back();
-      entityArray[tempID].exists = true;
+      tempID = freeEntityIDs.back();
+      freeEntityIDs.pop_back();
+      entityEntryArray[tempID].exists = true;
     }
-    return tempID;
+    return Entity(tempID);
   }
-  void EC::removeEntity(ID entityID)
+  void Entity::removeEntity()
   {
-    freeIDs.push_back(entityID);
-    for(void (*f)(ID) : entityArray[entityID].removeComponentFunctions)
+    removeEntity(this->entityID);
+  }
+  template<typename T, typename... Args>
+  void Entity::createComponent(const Args&... args)
+  {
+    createComponent<T>(this->entityID, args...);
+  }
+  template<typename T>
+  void Entity::removeComponent()
+  {
+    removeComponent<T>(this->entityID);
+  }
+  template<typename T>
+  T & Entity::getComponent()
+  {
+    return getComponent<T>(this->entityID);
+  }
+  template<typename T>
+  bool Entity::hasComponents()
+  {
+    return hasComponents<T>(this->entityID);
+  }
+  template<typename T1, typename T2, typename... Targs>
+  bool Entity::hasComponents()
+  {
+    return hasComponents<T1, T2, Targs...>(this->entityID);
+  }
+
+  void Entity::removeEntity(ID entityID)
+  {
+    freeEntityIDs.push_back(entityID);
+    for(void (*f)(ID) : entityEntryArray[entityID].removeComponentFunctions)
     {
       f(entityID);
     }
-    entityArray[entityID].removeComponentFunctions = std::vector<void (*)(ID)>();
-    entityArray[entityID].exists = false;
+    entityEntryArray[entityID].removeComponentFunctions = std::vector<void (*)(ID)>();
+    entityEntryArray[entityID].exists = false;
   }
-
   template<typename T, typename... Args>
-  void EC::createComponent(ID entityID, const Args&... args)
+  void Entity::createComponent(ID entityID, const Args&... args)
   {
-    Entity & entity = entityArray[entityID];
     if(entityID >= entityToComponentIDs<T>.size())
     {
       entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
@@ -140,10 +270,10 @@ namespace ecs
         }
       }
     }
-    entity.removeComponentFunctions.push_back(&removeComponent<T>);
+    entityEntryArray[entityID].removeComponentFunctions.push_back(&removeComponent<T>);
   }
   template<typename T>
-  void EC::removeComponent(ID entityID)
+  void Entity::removeComponent(ID entityID)
   {
     if(!hasComponents<T>(entityID))
     {
@@ -161,40 +291,40 @@ namespace ecs
     entityToComponentIDs<T>[entityID] = NULL_ID;
   }
   template<typename T>
-  T & EC::getComponent(ID entityID)
+  T & Entity::getComponent(ID entityID)
   {
     return componentArray<T>[entityToComponentIDs<T>[entityID]];
   }
   template<typename T>
-  bool EC::hasComponents(ID entityID)
+  bool Entity::hasComponents(ID entityID)
   {
     return entityToComponentIDs<T>.size() > entityID && entityToComponentIDs<T>[entityID] != NULL_ID;
   }
   template<typename T1, typename T2, typename... Targs>
-  bool EC::hasComponents(ID entityID)
+  bool Entity::hasComponents(ID entityID)
   {
     return hasComponents<T1>(entityID) && hasComponents<T2, Targs...>(entityID);
   }
   template<>
-  bool EC::hasComponents<void>(ID entityID)
+  bool Entity::hasComponents<void>(ID entityID)
   {
-    return entityArray.size() > entityID && entityArray[entityID].exists;
+    return entityEntryArray.size() > entityID && entityEntryArray[entityID].exists;
   }
 
   template<typename T, typename... Targs>
-  EC::Iterator<T, Targs...>::Iterator()
+  Entity::Iterator<T, Targs...>::Iterator()
   {
     counter = 0;
-    this->to = entityArray.size();
+    this->to = entityEntryArray.size();
   }
   template<typename T, typename... Targs>
-  EC::Iterator<T, Targs...>::Iterator(ID from, ID to)
+  Entity::Iterator<T, Targs...>::Iterator(ID from, ID to)
   {
     counter = from;
-    this->to = to == END ? entityArray.size() : to;
+    this->to = to == END ? entityEntryArray.size() : to;
   }
   template<typename T, typename... Targs>
-  bool EC::Iterator<T, Targs...>::hasNext()
+  bool Entity::Iterator<T, Targs...>::hasNext()
   {
     while(to>counter)
     {
@@ -208,18 +338,18 @@ namespace ecs
     return false;
   }
   template<typename T, typename... Targs>
-  ID EC::Iterator<T, Targs...>::next()
+  Entity Entity::Iterator<T, Targs...>::next()
   {
     if(hasNext())
     {
       current = counter;
       counter+=1;
-      return current;
+      return Entity(current);
     }
-    return NULL_ID;
+    return Entity(NULL_ID);
   }
   template<typename T, typename... Targs>
-  ID EC::Iterator<T, Targs...>::getCurrentID()
+  ID Entity::Iterator<T, Targs...>::getID()
   {
     return current;
   }

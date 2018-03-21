@@ -23,45 +23,39 @@ void handleSomeEvent(SomeEvent event)
 
 void outputSystem()
 {
-  EC::Iterator<void> iter = EC::Iterator<void>();
-  while(iter.hasNext())
+  for(auto currentEntity : RealIterator<void>())
   {
-    ID currentEntityID = iter.next();
     std::cout << "-----------------------" << std::endl;
-    std::cout << "ID: \t" << currentEntityID << std::endl;
-    if(EC::hasComponents<Position>(currentEntityID))
+    std::cout << "ID: \t" << currentEntity.getID() << std::endl;
+    if(currentEntity.hasComponents<Position>())
     {
       std::cout << "Position:" << std::endl;
-      std::cout << " x: \t" << EC::getComponent<Position>(currentEntityID).x << std::endl;
-      std::cout << " y: \t" << EC::getComponent<Position>(currentEntityID).y << std::endl;
+      std::cout << " x: \t" << currentEntity.getComponent<Position>().x << std::endl;
+      std::cout << " y: \t" << currentEntity.getComponent<Position>().y << std::endl;
     }
-    if(EC::hasComponents<Mass>(currentEntityID))
+    if(currentEntity.hasComponents<Mass>())
     {
-      std::cout << "Mass: \t" << EC::getComponent<Mass>(currentEntityID).m << std::endl;
+      std::cout << "Mass: \t" << currentEntity.getComponent<Mass>().m << std::endl;
     }
     std::cout << "-----------------------" << std::endl;
   }
 }
 void gravitySystem()
 {
-  EC::Iterator<Mass, Position> iter = EC::Iterator<Mass, Position>();
-  while(iter.hasNext())
+  for(auto currentEntity : RealIterator<Mass, Position>())
   {
-    ID currentEntityID = iter.next();
-    EC::Iterator<Mass, Position> iter2 = EC::Iterator<Mass, Position>(iter.getCurrentID() + 1, END);
-    while(iter2.hasNext())
+    for(auto currentEntity2_iter = ++RealIterator<Mass, Position>(currentEntity); currentEntity2_iter != RealIterator<Mass, Position>().end(); ++currentEntity2_iter)
     {
-      ID currentEntityID2 = iter2.next();
-
-      double dx = EC::getComponent<Position>(currentEntityID2).x - EC::getComponent<Position>(currentEntityID).x;
-      double dy = EC::getComponent<Position>(currentEntityID2).y - EC::getComponent<Position>(currentEntityID).y;
+      auto currentEntity2 = *currentEntity2_iter;
+      double dx = currentEntity2.getComponent<Position>().x - currentEntity.getComponent<Position>().x;
+      double dy = currentEntity2.getComponent<Position>().y - currentEntity.getComponent<Position>().y;
       double distanceSquared = dx*dx + dy*dy;
       if(distanceSquared<0)
       {
         distanceSquared*=-1;
       }
-      double F = 6.67259e-11 * ((EC::getComponent<Mass>(currentEntityID2).m * EC::getComponent<Mass>(currentEntityID).m) / (distanceSquared));
-      std::cout<<"Force between " << currentEntityID <<" and "<< currentEntityID2 << ": "<< F<<"\n";
+      double F = 6.67259e-11 * ((currentEntity2.getComponent<Mass>().m * currentEntity.getComponent<Mass>().m) / (distanceSquared));
+      std::cout<<"Force between " << currentEntity.getID() <<" and "<< currentEntity2.getID() << ": "<< F<<"\n";
     }
   }
 }
@@ -75,32 +69,19 @@ int main()
   SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&handleSomeEvent);
 
-  ID a = EC::createEntity();
-  ID b = EC::createEntity();
-  ID c = EC::createEntity();
-  ID d = EC::createEntity();
-  ID e = EC::createEntity();
+  Entity a = Entity::createEntity();
+  Entity b = Entity::createEntity();
+  Entity c = Entity::createEntity();
+  Entity d = Entity::createEntity();
+  Entity e = Entity::createEntity();
 
-  EC::createComponent<Position>(a);
-  EC::getComponent<Position>(a) = { 0.2, 0.3 };
-
-  EC::createComponent<Position>(b);
-  EC::getComponent<Position>(b) = { 500.0, 600.0 };
-
-  EC::createComponent<Position>(c);
-  EC::getComponent<Position>(c) = { 42.0, 7890.3 };
-
-  EC::createComponent<Position>(d);
-  EC::getComponent<Position>(d) = { 6.0, 6.3 };
-
-  EC::createComponent<Mass>(a);
-  EC::getComponent<Mass>(a) = { 0.7 };
-
-  EC::createComponent<Mass>(b);
-  EC::getComponent<Mass>(b) = { 7.3 };
-
-  EC::createComponent<Mass>(c);
-  EC::getComponent<Mass>(c) = { 1200000.0 };
+  a.createComponent<Position>(Position{ 0.2, 0.3 });
+  b.createComponent<Position>(Position{ 500.0, 600.0 });
+  c.createComponent<Position>(Position{ 42.0, 7890.3 });
+  d.createComponent<Position>(Position{ 6.0, 6.3 });
+  a.createComponent<Mass>(Mass{ 0.7 });
+  b.createComponent<Mass>(Mass{ 7.3  });
+  c.createComponent<Mass>(Mass{ 1200000.0 });
 
   SystemManager::throwEvent(SomeEvent{12504});
   SystemManager::throwEvent(SomeEvent{12505});
@@ -113,14 +94,14 @@ int main()
 
   std::cout << std::endl;
 
-  EC::removeEntity(d);
-  EC::removeEntity(a);
-  EC::removeComponent<Position>(c);
+  d.removeEntity();
+  a.removeEntity();
+  c.removeComponent<Position>();
 
-  EC::createComponent<Position>(e, Position{2000.0, 3000.0});
-  EC::createComponent<Mass>(e, Mass{1000.0});
-  a = EC::createEntity();
-  EC::createComponent<Position>(a, Position{1000.0, 1000.0});
+  e.createComponent<Position>(Position{2000.0, 3000.0});
+  e.createComponent<Mass>(Mass{1000.0});
+  a = Entity::createEntity();
+  a.createComponent<Position>(Position{1000.0, 1000.0});
 
   SystemManager::runSystems();
 
