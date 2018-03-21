@@ -23,7 +23,7 @@ void handleSomeEvent(SomeEvent event)
 
 void outputSystem()
 {
-  for(auto currentEntity : RealIterator<void>())
+  for(auto currentEntity : Iterator<void>())
   {
     std::cout << "-----------------------" << std::endl;
     std::cout << "ID: \t" << currentEntity.getID() << std::endl;
@@ -42,9 +42,9 @@ void outputSystem()
 }
 void gravitySystem()
 {
-  for(auto currentEntity : RealIterator<Mass, Position>())
+  for(auto currentEntity : Iterator<Mass, Position>())
   {
-    for(auto currentEntity2_iter = ++RealIterator<Mass, Position>(currentEntity); currentEntity2_iter != RealIterator<Mass, Position>().end(); ++currentEntity2_iter)
+    for(auto currentEntity2_iter = ++Iterator<Mass, Position>(currentEntity); currentEntity2_iter != Iterator<Mass, Position>().end(); ++currentEntity2_iter)
     {
       auto currentEntity2 = *currentEntity2_iter;
       double dx = currentEntity2.getComponent<Position>().x - currentEntity.getComponent<Position>().x;

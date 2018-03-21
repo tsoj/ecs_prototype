@@ -21,7 +21,7 @@ namespace ecs
   class Entity
   {
     template<typename T, typename... Targs>
-    friend class RealIterator;
+    friend class Iterator;
     public:
 
     static Entity createEntity();
@@ -102,89 +102,6 @@ namespace ecs
 
   std::vector<ID> Entity::freeEntityIDs = std::vector<ID>();
   std::vector<Entity::EntityEntry> Entity::entityEntryArray = std::vector<EntityEntry>();
-
-  template<typename T, typename... Targs>
-  class RealIterator
-  {
-
-    public:
-    ID entityID;
-
-    RealIterator() : entityID(NULL_ID) {}
-    explicit RealIterator(ID entityID) : entityID(entityID) {}
-    explicit RealIterator(Entity entity) : entityID(entity.entityID) {}
-
-    RealIterator<T, Targs...> begin()
-    {
-      ID i = 0;
-      while(end().entityID > i)
-      {
-        if(!Entity::hasComponents<T, Targs...>(i))
-        {
-          i+=1;
-          continue;
-        }
-        return RealIterator<T, Targs...>(i);
-      }
-      return end();
-    }
-    RealIterator<T, Targs...> end()
-    {
-      return RealIterator<T, Targs...>(Entity::entityEntryArray.size());
-    }
-
-    void operator= (const RealIterator<T, Targs...>& a)
-    {
-      entityID = a.entityID;
-    }
-    bool operator== (const RealIterator<T, Targs...>& a)
-    {
-      return entityID == a.entityID;
-    }
-    bool operator!= (const RealIterator<T, Targs...>& a)
-    {
-      return entityID != a.entityID;
-    }
-    Entity operator*()
-    {
-      return Entity(entityID);
-    }
-    Entity operator->()
-    {
-      return Entity(entityID);
-    }
-    RealIterator<T, Targs...> operator++()         //=> Prefix Increment
-    {
-      entityID+=1;
-      while(end().entityID > entityID)
-      {
-        if(!Entity::hasComponents<T, Targs...>(entityID))
-        {
-          entityID+=1;
-          continue;
-        }
-        return RealIterator<T, Targs...>(entityID);
-      }
-      entityID = end().entityID;
-      return end();
-    }
-    RealIterator<T, Targs...> operator++(int)      //=> Postfix Increment
-    {
-      RealIterator<T, Targs...> ret = RealIterator<T, Targs...>(entityID);
-      entityID+=1;
-      while(end().entityID > entityID)
-      {
-        if(!Entity::hasComponents<T, Targs...>(entityID))
-        {
-          entityID+=1;
-          continue;
-        }
-        return ret;
-      }
-      entityID = end().entityID;
-      return end();
-    }
-  };
 
   Entity Entity::createEntity()
   {
@@ -312,46 +229,107 @@ namespace ecs
   }
 
   template<typename T, typename... Targs>
-  Entity::Iterator<T, Targs...>::Iterator()
+  class Iterator
   {
-    counter = 0;
-    this->to = entityEntryArray.size();
-  }
+    private:
+
+    ID entityID;
+
+    public:
+
+    Iterator() : entityID(NULL_ID) {}
+    explicit Iterator(ID entityID) : entityID(entityID) {}
+    explicit Iterator(Entity entity) : entityID(entity.entityID) {}
+
+    Iterator<T, Targs...> begin();
+    Iterator<T, Targs...> end();
+
+    void operator= (const Iterator<T, Targs...>& a);
+    bool operator== (const Iterator<T, Targs...>& a);
+    bool operator!= (const Iterator<T, Targs...>& a);
+    Entity operator*();
+    Entity operator->();
+    Iterator<T, Targs...> operator++();
+    Iterator<T, Targs...> operator++(int);
+  };
+
   template<typename T, typename... Targs>
-  Entity::Iterator<T, Targs...>::Iterator(ID from, ID to)
+  Iterator<T, Targs...> Iterator<T, Targs...>::begin()
   {
-    counter = from;
-    this->to = to == END ? entityEntryArray.size() : to;
-  }
-  template<typename T, typename... Targs>
-  bool Entity::Iterator<T, Targs...>::hasNext()
-  {
-    while(to>counter)
+    ID i = 0;
+    while(end().entityID > i)
     {
-      if(!hasComponents<T, Targs...>(counter))
+      if(!Entity::hasComponents<T, Targs...>(i))
       {
-        counter+=1;
+        i+=1;
         continue;
       }
-      return true;
+      return Iterator<T, Targs...>(i);
     }
-    return false;
+    return end();
   }
   template<typename T, typename... Targs>
-  Entity Entity::Iterator<T, Targs...>::next()
+  Iterator<T, Targs...>  Iterator<T, Targs...>::end()
   {
-    if(hasNext())
+    return Iterator<T, Targs...>(Entity::entityEntryArray.size());
+  }
+  template<typename T, typename... Targs>
+  void  Iterator<T, Targs...>::operator= (const Iterator<T, Targs...>& a)
+  {
+    entityID = a.entityID;
+  }
+  template<typename T, typename... Targs>
+  bool  Iterator<T, Targs...>::operator== (const Iterator<T, Targs...>& a)
+  {
+    return entityID == a.entityID;
+  }
+  template<typename T, typename... Targs>
+  bool  Iterator<T, Targs...>::operator!= (const Iterator<T, Targs...>& a)
+  {
+    return entityID != a.entityID;
+  }
+  template<typename T, typename... Targs>
+  Entity  Iterator<T, Targs...>::operator*()
+  {
+    return Entity(entityID);
+  }
+  template<typename T, typename... Targs>
+  Entity  Iterator<T, Targs...>::operator->()
+  {
+    return Entity(entityID);
+  }
+  template<typename T, typename... Targs>
+  Iterator<T, Targs...>  Iterator<T, Targs...>::operator++()         //=> Prefix Increment
+  {
+    entityID+=1;
+    while(end().entityID > entityID)
     {
-      current = counter;
-      counter+=1;
-      return Entity(current);
+      if(!Entity::hasComponents<T, Targs...>(entityID))
+      {
+        entityID+=1;
+        continue;
+      }
+      return Iterator<T, Targs...>(entityID);
     }
-    return Entity(NULL_ID);
+    entityID = end().entityID;
+    return end();
   }
   template<typename T, typename... Targs>
-  ID Entity::Iterator<T, Targs...>::getID()
+  Iterator<T, Targs...>  Iterator<T, Targs...>::operator++(int)      //=> Postfix Increment
   {
-    return current;
+    Iterator<T, Targs...> ret = Iterator<T, Targs...>(entityID);
+    entityID+=1;
+    while(end().entityID > entityID)
+    {
+      if(!Entity::hasComponents<T, Targs...>(entityID))
+      {
+        entityID+=1;
+        continue;
+      }
+      return ret;
+    }
+    entityID = end().entityID;
+    return end();
   }
 
   /********************SYSTEMS********************/
