@@ -36,25 +36,7 @@ namespace ecs
     bool hasComponents();
     template<typename T1, typename T2, typename... Targs>
     bool hasComponents();
-
-    template<typename T, typename... Targs>
-    class Iterator
-    {
-      private:
-
-      ID counter;
-      ID to;
-      ID current = NULL_ID;
-
-      public:
-
-      Iterator();
-      Iterator(ID from, ID to);
-      bool hasNext();
-      Entity next();
-      ID getID();
-    };
-
+    
     ID getID()
     {
       return entityID;
