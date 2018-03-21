@@ -15,7 +15,7 @@ all: $(OBJ)
 	$(CC) $(CFLAGS) -c $< -o $(BIN_FILE_PATH)$@
 
 test: all
-	$(BIN_FILE_PATH)$(NAME)
+	$(BIN_FILE_PATH)$(NAME) && $(BIN_FILE_PATH)$(NAME) > test.log
 
 clean:
 	rm $(OBJ_DEST) $(BIN_FILE_PATH)$(NAME)

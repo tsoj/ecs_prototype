@@ -81,13 +81,26 @@ int main()
   ID d = EC::createEntity();
   ID e = EC::createEntity();
 
-  EC::createComponent<Position>(a, Position{0.2, 0.3});
-  EC::createComponent<Position>(b, Position{500.0, 600.0});
-  EC::createComponent<Position>(c, Position{42.0, 7890.3});
-  EC::createComponent<Position>(d, Position{6.0, 6.3});
-  EC::createComponent<Mass>(a, Mass{0.7});
-  EC::createComponent<Mass>(b, Mass{7.3});
-  EC::createComponent<Mass>(c, Mass{1200000.0});
+  EC::createComponent<Position>(a);
+  EC::getComponent<Position>(a) = { 0.2, 0.3 };
+
+  EC::createComponent<Position>(b);
+  EC::getComponent<Position>(b) = { 500.0, 600.0 };
+
+  EC::createComponent<Position>(c);
+  EC::getComponent<Position>(c) = { 42.0, 7890.3 };
+
+  EC::createComponent<Position>(d);
+  EC::getComponent<Position>(d) = { 6.0, 6.3 };
+
+  EC::createComponent<Mass>(a);
+  EC::getComponent<Mass>(a) = { 0.7 };
+
+  EC::createComponent<Mass>(b);
+  EC::getComponent<Mass>(b) = { 7.3 };
+
+  EC::createComponent<Mass>(c);
+  EC::getComponent<Mass>(c) = { 1200000.0 };
 
   SystemManager::throwEvent(SomeEvent{12504});
   SystemManager::throwEvent(SomeEvent{12505});

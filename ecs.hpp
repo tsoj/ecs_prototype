@@ -25,8 +25,8 @@ namespace ecs
     static ID createEntity();
     static void removeEntity(ID entityID);
 
-    template<typename T>
-    static void createComponent(ID entityID, T component);
+    template<typename T, typename... Args>
+    static void createComponent(ID entityID, const Args&... args);
     template<typename T>
     static void removeComponent(ID entityID);
     template<typename T>
@@ -111,8 +111,8 @@ namespace ecs
     entityArray[entityID].exists = false;
   }
 
-  template<typename T>
-  void EC::createComponent(ID entityID, T component)
+  template<typename T, typename... Args>
+  void EC::createComponent(ID entityID, const Args&... args)
   {
     Entity & entity = entityArray[entityID];
     if(entityID >= entityToComponentIDs<T>.size())
@@ -120,7 +120,7 @@ namespace ecs
       entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
       entityToComponentIDs<T>[entityID] = componentArray<T>.size();
       componentToEntityIDs<T>.push_back(entityID);
-      componentArray<T>.push_back(component);
+      componentArray<T>.emplace_back(args...);
     }
     else if(entityID < entityToComponentIDs<T>.size())
     {
@@ -131,7 +131,7 @@ namespace ecs
         {
           if(foundBiggerID == false)
           {
-            componentArray<T>.insert(componentArray<T>.begin() + entityToComponentIDs<T>[i], component);
+            componentArray<T>.emplace(componentArray<T>.begin() + entityToComponentIDs<T>[i], args...);
             componentToEntityIDs<T>.insert(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[i], entityID);
             entityToComponentIDs<T>[entityID] = entityToComponentIDs<T>[i];
             foundBiggerID = true;
@@ -230,12 +230,12 @@ namespace ecs
   {
     public:
 
-    static void addSystem(void (*update)(), Duration deltaTime);
+    static void addSystem(void (*update)(), const Duration& deltaTime);
     template<typename T>
     static void addSystem(void (*update)(T));
     static void runSystems();
     template<typename T>
-    static void throwEvent(T event);
+    static void throwEvent(const T& event);
 
     private:
 
@@ -251,11 +251,11 @@ namespace ecs
       const Duration deltaTime;
       TimePoint lastUpdateCallTime;
     };
-    struct eventRegisterHelper
+    struct EventRegisterHelper
     {
-      explicit eventRegisterHelper(void (*f)())
+      explicit EventRegisterHelper(void (*f)())
       {
-        runEventBasedSystemsList.emplace_back(f);
+        runEventBasedSystemsList.push_back(f);
       }
     };
     template<typename T>
@@ -275,14 +275,14 @@ namespace ecs
   template<typename T>
   std::vector<T> SystemManager::eventQueue = std::vector<T>();
 
-  void SystemManager::addSystem(void (*update)(), Duration deltaTime)
+  void SystemManager::addSystem(void (*update)(), const Duration& deltaTime)
   {
     timeBasedSystems.emplace_back(update, deltaTime);
   }
   template<typename T>
   void SystemManager::addSystem(void (*update)(T))
   {
-    eventBasedSystem<T>.emplace_back(update);
+    eventBasedSystem<T>.push_back(update);
   }
   void SystemManager::runSystems()
   {
@@ -302,12 +302,12 @@ namespace ecs
     }
   }
   template<typename T>
-  void SystemManager::throwEvent(T event)
+  void SystemManager::throwEvent(const T& event)
   {
     //register event
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"
-    static eventRegisterHelper _(&runEventBasedSystems<T>);
+    const static EventRegisterHelper _(&runEventBasedSystems<T>);
     #pragma GCC diagnostic pop
 
     eventQueue<T>.push_back(event);
