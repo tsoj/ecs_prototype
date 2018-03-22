@@ -67,6 +67,10 @@ void gravitySystem()
     }
   }
 }
+void removeMeSystem()
+{
+  std::cout << "Remove me." << std::endl;
+}
 
 
 int main()
@@ -75,6 +79,7 @@ int main()
 
   SystemManager::addSystem(&outputSystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(0));
+  SystemManager::addSystem(&removeMeSystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&handleSomeEvent);
   SystemManager::addSystem(&handleAnotherEvent);
 
@@ -107,6 +112,11 @@ int main()
   SystemManager::throwEvent(AnotherEvent{10.05});
 
   SystemManager::runSystems();
+
+  SystemManager::throwEvent(AnotherEvent{10.05});
+  SystemManager::removeSystem(&handleAnotherEvent);
+  SystemManager::removeSystem(&removeMeSystem);
+
 
   std::cout << std::endl;
 

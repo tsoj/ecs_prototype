@@ -315,6 +315,9 @@ namespace ecs
     static void addSystem(void (*update)(), const Duration& deltaTime);
     template<typename T>
     static void addSystem(void (*update)(const T&));
+    static void removeSystem(void (*update)());
+    template<typename T>
+    static void removeSystem(void (*update)(const T&));
     static void runSystems();
     template<typename T>
     static void throwEvent(const T& event);
@@ -330,7 +333,7 @@ namespace ecs
       {
       }
       void (*update)();
-      const Duration deltaTime;
+      Duration deltaTime;
       TimePoint lastUpdateCallTime;
     };
     struct EventRegisterHelper
@@ -365,6 +368,29 @@ namespace ecs
   void SystemManager::addSystem(void (*update)(const T&))
   {
     eventBasedSystem<T>.push_back(update);
+  }
+  void SystemManager::removeSystem(void (*update)())
+  {
+    for(size_t i = 0; i<timeBasedSystems.size(); ++i)
+    {
+      if(timeBasedSystems[i].update == update)
+      {
+        timeBasedSystems.erase(timeBasedSystems.begin() + i);
+        --i;
+      }
+    }
+  }
+  template<typename T>
+  void SystemManager::removeSystem(void (*update)(const T&))
+  {
+    for(size_t i = 0; i<eventBasedSystem<T>.size(); ++i)
+    {
+      if(eventBasedSystem<T>[i] == update)
+      {
+        eventBasedSystem<T>.erase(eventBasedSystem<T>.begin() + i);
+        --i;
+      }
+    }
   }
   void SystemManager::runSystems()
   {

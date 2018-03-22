@@ -7,9 +7,9 @@ First of all, everything is in the `ecs` namespace.
 
 ##### Destroy an entity:
     a.removeEntity();
-      
+
 This will also automatically destroy all components that were assigned to this entity.
-    
+
 ##### Assign a component to an entity:
     struct Position
     {
@@ -17,7 +17,7 @@ This will also automatically destroy all components that were assigned to this e
       double y;
     };
     a.createComponent<Position>(Position{ 0.2, 0.3 });
-    
+
 You can replace the `Position` struct with any data structure you wish to use.
 
 ##### Remove a component from an entity:
@@ -25,7 +25,7 @@ You can replace the `Position` struct with any data structure you wish to use.
 
 ##### Access a component that is assigned to an entity:
     a.getComponent<Position>().x = 1337.42; // is undefined when a has no Position component assigned
-    
+
 This function returns a reference, so you do not need a `setComponent<T>(...` function. However, this reference is not stable when you assign or remove components, so it might get invalid over time; use always this function rather then using a variable when you want to access a component, unless you are sure, that the reference stays valid as long as you need it.
 
 ##### Check if a entity has a component:
@@ -46,10 +46,10 @@ This function returns a reference, so you do not need a `setComponent<T>(...` fu
             // do gravity calculations or whatever
         }
     }
-    
+
     for(auto a : Iterator<void>()) // loops over all valid entities
     { /*...*/ }
-    
+
 ##### Run all added systems and resolve all thrown events:
     SystemManager::runSystems();
 
@@ -59,7 +59,7 @@ This function returns a reference, so you do not need a `setComponent<T>(...` fu
         // loop over entities or whatever
     }
     SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(10));
-    
+
 This system will be called about every 10th millisecond.
 
 ##### Throw an event:
@@ -68,7 +68,7 @@ This system will be called about every 10th millisecond.
         double value;
     }
     SystemManager::throwEvent(SomeEvent{0.001});
-    
+
 Again, you can replace `SomeEvent` with any structure you want to use.
 
 ##### Catch an event:
@@ -77,17 +77,24 @@ Again, you can replace `SomeEvent` with any structure you want to use.
         std::cout << "Catched event: " << event.value << std::endl;
     }
     SystemManager::addSystem(&catchEvent);
-    
+
 You can replace `catchEvent()` with any function you want, if you want to catch all events `T` you need to add a function that looks like this:
 
     void customEventCatcher(const T& event)
     {
         // ...
     }
-    
+
+##### Remove a system:
+    SystemManager::removeSystem(&catchEvent);
+    SystemManager::removeSystem(&gravitySystem);
+
+If you added the same system multiple times all of them will be removed even if you had different durations assigned to them.
+
 ## Limitations
 
 Addresses of components are unstable when components are assigned or removed.
 
-This library does not work with multiple .cpp files (multiple object files, that get linked together). You still will be able to multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
+You cannot create multiple *worlds*, all entities are stored in the same state.
 
+This library does not work with multiple .cpp files (multiple object files, that get linked together). You still will be able to multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
