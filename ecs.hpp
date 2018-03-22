@@ -6,12 +6,7 @@
 namespace ecs
 {
   typedef size_t ID;
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-const-variable"
   const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
-  const ID END = NULL_ID;
-  const ID BEGIN = 0;
-  #pragma GCC diagnostic pop
   typedef std::chrono::nanoseconds Duration;
   typedef std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
   typedef std::chrono::high_resolution_clock Clock;
@@ -36,7 +31,7 @@ namespace ecs
     bool hasComponents();
     template<typename T1, typename T2, typename... Targs>
     bool hasComponents();
-    
+
     ID getID()
     {
       return entityID;
@@ -59,8 +54,6 @@ namespace ecs
     template<typename T>
     static std::vector<T> componentArray;
     template<typename T>
-    static std::vector<ID> componentToEntityIDs;
-    template<typename T>
     static std::vector<ID> entityToComponentIDs;
 
     static void removeEntity(ID entityID);
@@ -77,8 +70,6 @@ namespace ecs
   };
   template<typename T>
   std::vector<T> Entity::componentArray = std::vector<T>();
-  template<typename T>
-  std::vector<ID> Entity::componentToEntityIDs = std::vector<ID>();
   template<typename T>
   std::vector<ID> Entity::entityToComponentIDs = std::vector<ID>();
 
@@ -144,11 +135,14 @@ namespace ecs
   template<typename T, typename... Args>
   void Entity::createComponent(ID entityID, const Args&... args)
   {
+    if(hasComponents<T>(entityID))
+    {
+      return;
+    }
     if(entityID >= entityToComponentIDs<T>.size())
     {
       entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
       entityToComponentIDs<T>[entityID] = componentArray<T>.size();
-      componentToEntityIDs<T>.push_back(entityID);
       componentArray<T>.emplace_back(args...);
     }
     else if(entityID < entityToComponentIDs<T>.size())
@@ -161,7 +155,6 @@ namespace ecs
           if(foundBiggerID == false)
           {
             componentArray<T>.emplace(componentArray<T>.begin() + entityToComponentIDs<T>[i], args...);
-            componentToEntityIDs<T>.insert(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[i], entityID);
             entityToComponentIDs<T>[entityID] = entityToComponentIDs<T>[i];
             foundBiggerID = true;
           }
@@ -179,7 +172,6 @@ namespace ecs
       return;
     }
     componentArray<T>.erase(componentArray<T>.begin() + entityToComponentIDs<T>[entityID]);
-    componentToEntityIDs<T>.erase(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[entityID]);
     for(ID i = entityID; i<entityToComponentIDs<T>.size(); i++)
     {
       if(entityToComponentIDs<T>[i] != NULL_ID)
@@ -394,7 +386,7 @@ namespace ecs
   template<typename T>
   void SystemManager::throwEvent(const T& event)
   {
-    //register event
+    //register event type
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"
     const static EventRegisterHelper _(&runEventBasedSystems<T>);

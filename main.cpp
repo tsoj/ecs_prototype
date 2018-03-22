@@ -16,9 +16,17 @@ struct SomeEvent
 {
   int value = 0;
 };
+struct AnotherEvent
+{
+  double value = 0.0;
+};
 void handleSomeEvent(SomeEvent event)
 {
-  std::cout << "HANDLING EVENT !!: " << event.value << std::endl;
+  std::cout << "HANDLING SOME EVENT !!: " << event.value << std::endl;
+}
+void handleAnotherEvent(AnotherEvent event)
+{
+  std::cout << "HANDLING ANOTHER EVENT !!: " << event.value << std::endl;
 }
 
 void outputSystem()
@@ -68,6 +76,7 @@ int main()
   SystemManager::addSystem(&outputSystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(0));
   SystemManager::addSystem(&handleSomeEvent);
+  SystemManager::addSystem(&handleAnotherEvent);
 
   Entity a = Entity::createEntity();
   Entity b = Entity::createEntity();
@@ -87,8 +96,15 @@ int main()
   SystemManager::throwEvent(SomeEvent{12505});
   SystemManager::throwEvent(SomeEvent{12506});
   SystemManager::throwEvent(SomeEvent{12507});
+
+  SystemManager::throwEvent(AnotherEvent{0.6});
+  SystemManager::throwEvent(AnotherEvent{0.05});
+
   SystemManager::throwEvent(SomeEvent{12508});
   SystemManager::throwEvent(SomeEvent{12509});
+
+  SystemManager::throwEvent(AnotherEvent{10.6});
+  SystemManager::throwEvent(AnotherEvent{10.05});
 
   SystemManager::runSystems();
 
