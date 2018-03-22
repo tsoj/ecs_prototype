@@ -23,7 +23,7 @@ You can replace the `Position` struct with any data structure you wish to use.
     a.removeComponent<Position>();
 
 ###### Access a component that is assigned to an entity:
-    a.getComponent<Position>().x = 1337.42;
+    a.getComponent<Position>().x = 1337.42; // is undefined when a has no Position component assigned
 This function returns a reference, so you do not need a `setComponent<T>(...` function. However, this reference is not stable when you assign new components to entities, so it might get invalid over time; use always this function rather then using a variable when you want to access a component, unless you are sure, that the reference stays valid as long as you need it.
 
 ###### Check if a entity has a component:
