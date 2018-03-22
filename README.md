@@ -1,7 +1,7 @@
 # This is a C++14 single header entity-component-system library
 ### How to use it
 
-First of all, everything is int the `ecs` namespace.
+First of all, everything is in the `ecs` namespace.
 
 ###### Create an entity:
     Entity a = Entity::createEntity();
