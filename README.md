@@ -1,5 +1,5 @@
 # This is a C++14 single header entity-component-system library
-### How to use it
+## How to use it
 
 First of all, everything is in the `ecs` namespace.
 
@@ -80,6 +80,6 @@ You can replace `catchEvent()` with any function you want, if you want to catch 
         // ...
     }
     
-### Limitations
+## Limitations
 This library does not work with multiple .cpp files (multiple object files, that get linked together). You still will be able to multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
 
