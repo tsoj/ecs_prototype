@@ -20,11 +20,11 @@ struct AnotherEvent
 {
   double value = 0.0;
 };
-void handleSomeEvent(SomeEvent event)
+void handleSomeEvent(const SomeEvent& event)
 {
   std::cout << "HANDLING SOME EVENT !!: " << event.value << std::endl;
 }
-void handleAnotherEvent(AnotherEvent event)
+void handleAnotherEvent(const AnotherEvent& event)
 {
   std::cout << "HANDLING ANOTHER EVENT !!: " << event.value << std::endl;
 }

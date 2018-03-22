@@ -314,7 +314,7 @@ namespace ecs
 
     static void addSystem(void (*update)(), const Duration& deltaTime);
     template<typename T>
-    static void addSystem(void (*update)(T));
+    static void addSystem(void (*update)(const T&));
     static void runSystems();
     template<typename T>
     static void throwEvent(const T& event);
@@ -346,14 +346,14 @@ namespace ecs
     static std::vector<TimeBasedSystem> timeBasedSystems;
     static std::vector<void(*)()> runEventBasedSystemsList;
     template<typename T>
-    static std::vector<void(*)(T)> eventBasedSystem;
+    static std::vector<void(*)(const T&)> eventBasedSystem;
     template<typename T>
     static std::vector<T> eventQueue;
   };
   std::vector<SystemManager::TimeBasedSystem> SystemManager::timeBasedSystems = std::vector<SystemManager::TimeBasedSystem>();
   std::vector<void(*)()> SystemManager::runEventBasedSystemsList = std::vector<void(*)()>();
   template<typename T>
-  std::vector<void(*)(T)> SystemManager::eventBasedSystem = std::vector<void(*)(T)>();
+  std::vector<void(*)(const T&)> SystemManager::eventBasedSystem = std::vector<void(*)(const T&)>();
   template<typename T>
   std::vector<T> SystemManager::eventQueue = std::vector<T>();
 
@@ -362,7 +362,7 @@ namespace ecs
     timeBasedSystems.emplace_back(update, deltaTime);
   }
   template<typename T>
-  void SystemManager::addSystem(void (*update)(T))
+  void SystemManager::addSystem(void (*update)(const T&))
   {
     eventBasedSystem<T>.push_back(update);
   }
