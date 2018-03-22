@@ -26,7 +26,7 @@ You can replace the `Position` struct with any data structure that you wish to u
 ##### Access a component that is assigned to an entity:
     a.getComponent<Position>().x = 1337.42; // is undefined when a has no Position component assigned
 
-This function returns a reference so you do not need a `setComponent <T> (... `function, but this reference is not stable when you assign or remove components so it might get invalid over time. If you want to store the return value of this function in a variable be sure that it stays valid as long as you need it.
+This function returns a reference so you do not need a `setComponent<T>(... `function, but this reference is not stable when you assign or remove components so it might get invalid over time. If you want to store the return value of this function in a variable be sure that it stays valid as long as you need it.
 
 ##### Check if an entity has a component:
     bool a_has_Position = a.hasComponents<Position>();
@@ -94,6 +94,7 @@ If you have added the same system several times, all of them will be removed, ev
 ## Features
 
 - Components are stored in a contiguous memory with no gaps between them. Therefore, this library benefits very well from CPU caching.
+
 - Since this library is build upon templates, it is type-safe.
 
 ## Limitations
