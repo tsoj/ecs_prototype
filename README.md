@@ -8,7 +8,7 @@ First of all, everything is in the `ecs` namespace.
 ##### Destroy an entity:
     a.removeEntity();
 
-This will also automatically destroy all components that were assigned to this entity.
+This will also automatically destroy all components that have been assigned to this entity.
 
 ##### Assign a component to an entity:
     struct Position
@@ -18,7 +18,7 @@ This will also automatically destroy all components that were assigned to this e
     };
     a.createComponent<Position>(Position{ 0.2, 0.3 });
 
-You can replace the `Position` struct with any data structure you wish to use.
+You can replace the `Position` struct with any data structure that you wish to use.
 
 ##### Remove a component from an entity:
     a.removeComponent<Position>();
@@ -26,15 +26,15 @@ You can replace the `Position` struct with any data structure you wish to use.
 ##### Access a component that is assigned to an entity:
     a.getComponent<Position>().x = 1337.42; // is undefined when a has no Position component assigned
 
-This function returns a reference, so you do not need a `setComponent<T>(...` function. However, this reference is not stable when you assign or remove components, so it might get invalid over time; use always this function rather then using a variable when you want to access a component, unless you are sure, that the reference stays valid as long as you need it.
-
-##### Check if a entity has a component:
+This function returns a reference so you do not need a 'setComponent <T> (... `function, but this reference is not stable when you assign or remove components so it might get invalid over time. If you want to store the return value of this function in a variable be sure that it stays valid as long as you need it.
+    
+##### Check if an entity has a component:
     bool a_has_Position = a.hasComponents<Position>();
     bool a_has_Position_and_Mass_and_Velocity = a.hasComponents<Position, Mass, Velocity>();
     bool a_is_a_valid_entity = a.hasComponents<void>();
 
 ##### Looping over entities:
-    for(auto a : Iterator<Mass, Position>()) // loops over all entities, that have the components Mass and Position
+    for(auto a : Iterator<Mass, Position>()) // loops over all entities that have the components Mass and Position
     {
         for(
             auto b_iter = ++Iterator<Mass, Position>(a); // this sets b_iter to an Iterator, that is one entity further than a is
@@ -60,7 +60,7 @@ This function returns a reference, so you do not need a `setComponent<T>(...` fu
     }
     SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(10));
 
-This system will be called about every 10th millisecond.
+This system will be called approximately every 10th millisecond.
 
 ##### Throw an event:
     struct SomeEvent
@@ -78,7 +78,7 @@ Again, you can replace `SomeEvent` with any structure you want to use.
     }
     SystemManager::addSystem(&catchEvent);
 
-You can replace `catchEvent()` with any function you want, if you want to catch all events `T` you need to add a function that looks like this:
+You can replace `catchEvent()` with any function you want. If you want to catch all events `T` you need to add a function that looks like this:
 
     void customEventCatcher(const T& event)
     {
@@ -89,12 +89,19 @@ You can replace `catchEvent()` with any function you want, if you want to catch 
     SystemManager::removeSystem(&catchEvent);
     SystemManager::removeSystem(&gravitySystem);
 
-If you added the same system multiple times all of them will be removed even if you had different durations assigned to them.
+If you have added the same system several times, all of them will be removed, even if you have assigned different durations to them.
+
+## Features
+
+Components are stored in a contiguous memory with no gaps between them. Therefore, this library benefits very well from CPU caching.
+Since this library is build upon templates, it is type-safe.
 
 ## Limitations
+
+Assigning or removing components may require a large memory operation and is therefore not too fast.
 
 Addresses of components are unstable when components are assigned or removed.
 
 You cannot create multiple *worlds*, all entities are stored in the same state.
 
-This library does not work with multiple .cpp files (multiple object files, that get linked together). You still will be able to multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
+This library does not work with multiple CPP files (multiple object files linked together). You can still use multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
