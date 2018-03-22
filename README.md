@@ -6,7 +6,7 @@ First of all, everything is in the `ecs` namespace.
     Entity a = Entity::createEntity();
 
 ##### Destroy an entity:
-      a.removeEntity();
+    a.removeEntity();
       
 This will also automatically destroy all components that were assigned to this entity.
     
