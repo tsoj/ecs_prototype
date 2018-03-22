@@ -1,5 +1,6 @@
 #include <iostream>
 #include "ecs.hpp"
+#include "benchmark.hpp"
 using namespace ecs;
 
 struct Position
@@ -130,6 +131,19 @@ int main()
   a.createComponent<Position>(Position{1000.0, 1000.0});
 
   SystemManager::runSystems();
+
+	/*ecsTest(1'000, 1'000'000, 3);
+  entXTest(1'000, 1'000'000, 3);
+	ecsTest(10'000, 1'000'000, 3);
+	entXTest(10'000, 1'000'000, 3);
+	ecsTest(30'000, 100'000, 3);
+	entXTest(30'000, 100'000, 3);
+	ecsTest(100'000, 100'000, 5);
+	entXTest(100'000, 100'000, 5);
+	ecsTest(10'000, 1'000'000, 1'000);
+	entXTest(10'000, 1'000'000, 1'000);
+  ecsTest(100'000, 1'000'000, 1'000);
+  entXTest(100'000, 1'000'000, 1'000);*/
 
   std::cout << "\nGood Bye" << std::endl;
   return 0;

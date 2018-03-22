@@ -1,0 +1,74 @@
+Hello
+
+-----------------------
+ID: 	0
+Position:
+ x: 	0.2
+ y: 	0.3
+Mass: 	0.7
+-----------------------
+-----------------------
+ID: 	1
+Position:
+ x: 	500
+ y: 	600
+Mass: 	7.3
+-----------------------
+-----------------------
+ID: 	2
+Position:
+ x: 	42
+ y: 	7890.3
+Mass: 	1.2e+06
+-----------------------
+-----------------------
+ID: 	3
+Position:
+ x: 	6
+ y: 	6.3
+-----------------------
+-----------------------
+ID: 	4
+-----------------------
+Force between 0 and 1: 5.5948e-16
+Force between 0 and 2: 9.00342e-13
+Force between 1 and 2: 1.09546e-11
+Remove me.
+HANDLING SOME EVENT !!: 12504
+HANDLING SOME EVENT !!: 12505
+HANDLING SOME EVENT !!: 12506
+HANDLING SOME EVENT !!: 12507
+HANDLING SOME EVENT !!: 12508
+HANDLING SOME EVENT !!: 12509
+HANDLING ANOTHER EVENT !!: 0.6
+HANDLING ANOTHER EVENT !!: 0.05
+HANDLING ANOTHER EVENT !!: 10.6
+HANDLING ANOTHER EVENT !!: 10.05
+
+-----------------------
+ID: 	0
+Position:
+ x: 	1000
+ y: 	1000
+-----------------------
+-----------------------
+ID: 	1
+Position:
+ x: 	500
+ y: 	600
+Mass: 	7.3
+-----------------------
+-----------------------
+ID: 	2
+Mass: 	1.2e+06
+-----------------------
+-----------------------
+ID: 	4
+Position:
+ x: 	2000
+ y: 	3000
+Mass: 	1000
+-----------------------
+Force between 1 and 4: 6.08114e-14
+
+Good Bye
