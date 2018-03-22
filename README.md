@@ -59,6 +59,7 @@ This function returns a reference, so you do not need a `setComponent<T>(...` fu
         // loop over entities or whatever
     }
     SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(10));
+    
 This system will be called about every 10th millisecond.
 
 ##### Throw an event:
