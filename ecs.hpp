@@ -243,37 +243,37 @@ namespace ecs
     return end();
   }
   template<typename T, typename... Targs>
-  Iterator<T, Targs...>  Iterator<T, Targs...>::end()
+  Iterator<T, Targs...> Iterator<T, Targs...>::end()
   {
     return Iterator<T, Targs...>(Entity::entityEntryArray.size());
   }
   template<typename T, typename... Targs>
-  void  Iterator<T, Targs...>::operator= (const Iterator<T, Targs...>& a)
+  void Iterator<T, Targs...>::operator= (const Iterator<T, Targs...>& a)
   {
     entityID = a.entityID;
   }
   template<typename T, typename... Targs>
-  bool  Iterator<T, Targs...>::operator== (const Iterator<T, Targs...>& a)
+  bool Iterator<T, Targs...>::operator== (const Iterator<T, Targs...>& a)
   {
     return entityID == a.entityID;
   }
   template<typename T, typename... Targs>
-  bool  Iterator<T, Targs...>::operator!= (const Iterator<T, Targs...>& a)
+  bool Iterator<T, Targs...>::operator!= (const Iterator<T, Targs...>& a)
   {
     return entityID != a.entityID;
   }
   template<typename T, typename... Targs>
-  Entity  Iterator<T, Targs...>::operator*()
+  Entity Iterator<T, Targs...>::operator*()
   {
     return Entity(entityID);
   }
   template<typename T, typename... Targs>
-  Entity  Iterator<T, Targs...>::operator->()
+  Entity Iterator<T, Targs...>::operator->()
   {
     return Entity(entityID);
   }
   template<typename T, typename... Targs>
-  Iterator<T, Targs...>  Iterator<T, Targs...>::operator++()         //=> Prefix Increment
+  Iterator<T, Targs...> Iterator<T, Targs...>::operator++() // Prefix Increment
   {
     entityID+=1;
     while(end().entityID > entityID)
@@ -289,7 +289,7 @@ namespace ecs
     return end();
   }
   template<typename T, typename... Targs>
-  Iterator<T, Targs...>  Iterator<T, Targs...>::operator++(int)      //=> Postfix Increment
+  Iterator<T, Targs...> Iterator<T, Targs...>::operator++(int) // Postfix Increment
   {
     Iterator<T, Targs...> ret = Iterator<T, Targs...>(entityID);
     entityID+=1;
