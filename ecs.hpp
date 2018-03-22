@@ -54,6 +54,8 @@ namespace ecs
     template<typename T>
     static std::vector<T> componentArray;
     template<typename T>
+    static std::vector<ID> componentToEntityIDs;
+    template<typename T>
     static std::vector<ID> entityToComponentIDs;
 
     static void removeEntity(ID entityID);
@@ -70,6 +72,8 @@ namespace ecs
   };
   template<typename T>
   std::vector<T> Entity::componentArray = std::vector<T>();
+  template<typename T>
+  std::vector<ID> Entity::componentToEntityIDs = std::vector<ID>();
   template<typename T>
   std::vector<ID> Entity::entityToComponentIDs = std::vector<ID>();
 
@@ -143,6 +147,7 @@ namespace ecs
     {
       entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
       entityToComponentIDs<T>[entityID] = componentArray<T>.size();
+      componentToEntityIDs<T>.push_back(entityID);
       componentArray<T>.emplace_back(args...);
     }
     else if(entityID < entityToComponentIDs<T>.size())
@@ -155,6 +160,7 @@ namespace ecs
           if(foundBiggerID == false)
           {
             componentArray<T>.emplace(componentArray<T>.begin() + entityToComponentIDs<T>[i], args...);
+            componentToEntityIDs<T>.insert(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[i], entityID);
             entityToComponentIDs<T>[entityID] = entityToComponentIDs<T>[i];
             foundBiggerID = true;
           }
@@ -172,6 +178,7 @@ namespace ecs
       return;
     }
     componentArray<T>.erase(componentArray<T>.begin() + entityToComponentIDs<T>[entityID]);
+    componentToEntityIDs<T>.erase(componentToEntityIDs<T>.begin() + entityToComponentIDs<T>[entityID]);
     for(ID i = entityID; i<entityToComponentIDs<T>.size(); i++)
     {
       if(entityToComponentIDs<T>[i] != NULL_ID)
@@ -224,7 +231,6 @@ namespace ecs
     Entity operator*();
     Entity operator->();
     Iterator<T, Targs...> operator++();
-    Iterator<T, Targs...> operator++(int);
   };
 
   template<typename T, typename... Targs>
@@ -278,29 +284,11 @@ namespace ecs
     entityID+=1;
     while(end().entityID > entityID)
     {
-      if(!Entity::hasComponents<T, Targs...>(entityID))
+      if(Entity::hasComponents<T, Targs...>(entityID))
       {
-        entityID+=1;
-        continue;
+        return Iterator<T, Targs...>(entityID);
       }
-      return Iterator<T, Targs...>(entityID);
-    }
-    entityID = end().entityID;
-    return end();
-  }
-  template<typename T, typename... Targs>
-  Iterator<T, Targs...> Iterator<T, Targs...>::operator++(int) // Postfix Increment
-  {
-    Iterator<T, Targs...> ret = Iterator<T, Targs...>(entityID);
-    entityID+=1;
-    while(end().entityID > entityID)
-    {
-      if(!Entity::hasComponents<T, Targs...>(entityID))
-      {
-        entityID+=1;
-        continue;
-      }
-      return ret;
+      entityID+=1;
     }
     entityID = end().entityID;
     return end();
