@@ -26,7 +26,7 @@ You can replace the `Position` struct with any data structure you wish to use.
 ##### Access a component that is assigned to an entity:
     a.getComponent<Position>().x = 1337.42; // is undefined when a has no Position component assigned
     
-This function returns a reference, so you do not need a `setComponent<T>(...` function. However, this reference is not stable when you assign new components to entities, so it might get invalid over time; use always this function rather then using a variable when you want to access a component, unless you are sure, that the reference stays valid as long as you need it.
+This function returns a reference, so you do not need a `setComponent<T>(...` function. However, this reference is not stable when you assign or remove components, so it might get invalid over time; use always this function rather then using a variable when you want to access a component, unless you are sure, that the reference stays valid as long as you need it.
 
 ##### Check if a entity has a component:
     bool a_has_Position = a.hasComponents<Position>();
@@ -86,5 +86,8 @@ You can replace `catchEvent()` with any function you want, if you want to catch 
     }
     
 ## Limitations
+
+Addresses of components are unstable when components are assigned or removed.
+
 This library does not work with multiple .cpp files (multiple object files, that get linked together). You still will be able to multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
 
