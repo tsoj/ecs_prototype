@@ -93,15 +93,15 @@ If you have added the same system several times, all of them will be removed, ev
 
 ## Features
 
-Components are stored in a contiguous memory with no gaps between them. Therefore, this library benefits very well from CPU caching.
-Since this library is build upon templates, it is type-safe.
+- Components are stored in a contiguous memory with no gaps between them. Therefore, this library benefits very well from CPU caching.
+- Since this library is build upon templates, it is type-safe.
 
 ## Limitations
 
-Assigning or removing components may require a large memory operation and is therefore not too fast.
+- Assigning or removing components may require a large memory operation and is therefore not too fast.
 
-Addresses of components are unstable when components are assigned or removed.
+- Addresses of components are unstable when components are assigned or removed.
 
-You cannot create multiple *worlds*, all entities are stored in the same state.
+- You cannot create multiple *worlds*, all entities are stored in the same state.
 
-This library does not work with multiple CPP files (multiple object files linked together). You can still use multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
+- This library does not work with multiple CPP files (multiple object files linked together). You can still use multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
