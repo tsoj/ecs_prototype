@@ -60,7 +60,7 @@ This function returns a reference so you do not need a 'setComponent <T> (... `f
     }
     SystemManager::addSystem(&gravitySystem, std::chrono::milliseconds(10));
 
-This system will only be called by `SystemManager::runSystems();` if the last call of this system was 10 milliseconds or more ago.
+This system will only be called by `SystemManager::runSystems()` if the last call of this system was 10 milliseconds or more ago.
 
 ##### Throw an event:
     struct SomeEvent
