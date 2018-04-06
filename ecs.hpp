@@ -6,7 +6,7 @@
 namespace ecs
 {
   typedef size_t ID;
-  const ID NULL_ID = (0-1);//(size_t)(0-1) == SIZE_MAX;
+  const ID NULL_ID = 0-1; // == SIZE_MAX;
   typedef std::chrono::nanoseconds Duration;
   typedef std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
   typedef std::chrono::high_resolution_clock Clock;
@@ -137,7 +137,7 @@ namespace ecs
   {
     if(hasComponents<T>(entityID))
     {
-      return;
+      throw std::runtime_error("Tried to recreate existing component.");
     }
     if(entityID >= entityToComponentIDs<T>.size())
     {
@@ -169,7 +169,7 @@ namespace ecs
   {
     if(!hasComponents<T>(entityID))
     {
-      return;
+      throw std::runtime_error("Tried to remove non-existing component.");
     }
     componentArray<T>.erase(componentArray<T>.begin() + entityToComponentIDs<T>[entityID]);
     for(ID i = entityID; i<entityToComponentIDs<T>.size(); i++)
@@ -184,6 +184,10 @@ namespace ecs
   template<typename T>
   T & Entity::getComponent(ID entityID)
   {
+    if(!hasComponents<T>(entityID))
+    {
+      throw std::runtime_error("Tried to access non-existing component.");
+    }
     return componentArray<T>[entityToComponentIDs<T>[entityID]];
   }
   template<typename T>
