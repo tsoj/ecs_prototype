@@ -124,6 +124,11 @@ namespace ecs
 
   void Entity::removeEntity(ID entityID)
   {
+    if(entityEntryArray.size() <= entityID | entityEntryArray[entityID].exists == false)
+    {
+      throw std::runtime_error("Tried to remove non-existing entity.");
+    }
+
     freeEntityIDs.push_back(entityID);
     for(void (*f)(ID) : entityEntryArray[entityID].removeComponentFunctions)
     {
@@ -139,6 +144,7 @@ namespace ecs
     {
       throw std::runtime_error("Tried to recreate existing component.");
     }
+
     if(entityID >= entityToComponentIDs<T>.size())
     {
       entityToComponentIDs<T>.resize(entityID+1, NULL_ID);
@@ -171,6 +177,7 @@ namespace ecs
     {
       throw std::runtime_error("Tried to remove non-existing component.");
     }
+
     componentArray<T>.erase(componentArray<T>.begin() + entityToComponentIDs<T>[entityID]);
     for(ID i = entityID; i<entityToComponentIDs<T>.size(); i++)
     {
@@ -188,6 +195,7 @@ namespace ecs
     {
       throw std::runtime_error("Tried to access non-existing component.");
     }
+    
     return componentArray<T>[entityToComponentIDs<T>[entityID]];
   }
   template<typename T>
