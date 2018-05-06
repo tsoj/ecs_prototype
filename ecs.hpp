@@ -37,6 +37,8 @@ namespace ecs
       return entityID;
     }
 
+    Entity() : entityID(NULL_ID) {}
+
     private:
 
     Entity(ID entityID) : entityID(entityID) {}
@@ -195,7 +197,7 @@ namespace ecs
     {
       throw std::runtime_error("Tried to access non-existing component.");
     }
-    
+
     return componentArray<T>[entityToComponentIDs<T>[entityID]];
   }
   template<typename T>
