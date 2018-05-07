@@ -1,4 +1,4 @@
-# This is a C++14 single header entity-component-system library
+# This is a C++17 single header entity-component-system library
 ## How to use it
 First of all, everything is in the `ecs` namespace.
 
@@ -104,5 +104,3 @@ If you have added the same system several times, all of them will be removed, ev
 - Addresses of components are unstable when components are assigned or removed.
 
 - You cannot create multiple *worlds*, all entities are stored in the same state.
-
-- This library does not work with multiple CPP files (multiple object files linked together). You can still use multiple .cpp files but you need to stick to a single .cpp file (including any number of header files) with library calls.
