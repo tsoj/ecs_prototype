@@ -1,10 +1,10 @@
 CC = clang++
-CFLAGS = -std=c++14 -O3 -Wall -Wextra
-LDFLAGS = -std=c++14 -O3 -Wall -Wextra
+CFLAGS = -std=c++17 -O3 -Wall -Wextra
+LDFLAGS = -std=c++17 -O3 -Wall -Wextra
 NAME = ecs_prototype
 BIN_FILE_PATH = ./bin/
 
-CPP = main.cpp
+CPP = main.cpp e.cpp
 OBJ = $(CPP:%.cpp=%.o)
 OBJ_DEST = $(CPP:%.cpp=$(BIN_FILE_PATH)%.o)
 

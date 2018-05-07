@@ -19,8 +19,8 @@ namespace ecs
     friend class Iterator;
     public:
 
-    static Entity createEntity();
-    void removeEntity();
+    inline static Entity createEntity();
+    inline void removeEntity();
     template<typename T, typename... Args>
     void createComponent(const Args&... args);
     template<typename T>
@@ -50,15 +50,15 @@ namespace ecs
       bool exists = true;
     };
 
-    static std::vector<EntityEntry> entityEntryArray;
-    static std::vector<ID> freeEntityIDs;
+    inline static std::vector<EntityEntry> entityEntryArray = std::vector<EntityEntry>();
+    inline static std::vector<ID> freeEntityIDs = std::vector<ID>();
 
     template<typename T>
     static std::vector<T> componentArray;
     template<typename T>
     static std::vector<ID> entityToComponentIDs;
 
-    static void removeEntity(ID entityID);
+    inline static void removeEntity(ID entityID);
     template<typename T, typename... Args>
     static void createComponent(ID entityID, const Args&... args);
     template<typename T>
@@ -74,10 +74,6 @@ namespace ecs
   std::vector<T> Entity::componentArray = std::vector<T>();
   template<typename T>
   std::vector<ID> Entity::entityToComponentIDs = std::vector<ID>();
-
-  std::vector<ID> Entity::freeEntityIDs = std::vector<ID>();
-  std::vector<Entity::EntityEntry> Entity::entityEntryArray = std::vector<EntityEntry>();
-
   Entity Entity::createEntity()
   {
     ID tempID;
@@ -211,7 +207,7 @@ namespace ecs
     return hasComponents<T1>(entityID) && hasComponents<T2, Targs...>(entityID);
   }
   template<>
-  bool Entity::hasComponents<void>(ID entityID)
+  inline bool Entity::hasComponents<void>(ID entityID)
   {
     return entityEntryArray.size() > entityID && entityEntryArray[entityID].exists;
   }
@@ -307,13 +303,13 @@ namespace ecs
   {
     public:
 
-    static void addSystem(void (*update)(), const Duration& deltaTime);
+    inline static void addSystem(void (*update)(), const Duration& deltaTime);
     template<typename T>
     static void addSystem(void (*update)(const T&));
-    static void removeSystem(void (*update)());
+    inline static void removeSystem(void (*update)());
     template<typename T>
     static void removeSystem(void (*update)(const T&));
-    static void runSystems();
+    inline static void runSystems();
     template<typename T>
     static void throwEvent(const T& event);
 
@@ -341,15 +337,13 @@ namespace ecs
     template<typename T>
     static void runEventBasedSystems();
 
-    static std::vector<TimeBasedSystem> timeBasedSystems;
-    static std::vector<void(*)()> runEventBasedSystemsList;
+    inline static std::vector<TimeBasedSystem> timeBasedSystems = std::vector<SystemManager::TimeBasedSystem>();
+    inline static std::vector<void(*)()> runEventBasedSystemsList = std::vector<void(*)()>();
     template<typename T>
     static std::vector<void(*)(const T&)> eventBasedSystem;
     template<typename T>
     static std::vector<T> eventQueue;
   };
-  std::vector<SystemManager::TimeBasedSystem> SystemManager::timeBasedSystems = std::vector<SystemManager::TimeBasedSystem>();
-  std::vector<void(*)()> SystemManager::runEventBasedSystemsList = std::vector<void(*)()>();
   template<typename T>
   std::vector<void(*)(const T&)> SystemManager::eventBasedSystem = std::vector<void(*)(const T&)>();
   template<typename T>
